@@ -15,6 +15,12 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import os
+import sys
+
+# 将应用目录添加到Python路径
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))  # 如果您的应用在 apps 子目录中
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -37,6 +43,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # 第三方应用
+    'rest_framework',  # REST框架
+    'rest_framework.authtoken',  # 添加这一行
+    'corsheaders',  # 处理跨域请求
+
+    # 自定义应用
+    'apps.user',  # 如果您的应用在apps子目录中，需要这样引用
+    # 'apps.room',
+    # 'apps.booking',
+    # 'apps.service',
+    # 'apps.feedback',
 ]
 
 MIDDLEWARE = [
@@ -47,7 +65,24 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # 添加这一行
 ]
+
+# 配置跨域
+CORS_ALLOW_ALL_ORIGINS = True  # 开发环境下允许所有来源
+
+# REST框架设置
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
 
 ROOT_URLCONF = 'check_in.urls'
 
@@ -127,3 +162,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 在文件末尾添加
+AUTH_USER_MODEL = 'apps.user.User'

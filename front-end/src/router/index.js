@@ -4,12 +4,14 @@ import { createRouter, createWebHistory } from 'vue-router';
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard'
+    redirect: '/dashboard'  // 直接重定向到仪表盘
   },
+  // 删除登录和注册路由
   {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
+    // 移除认证要求
     children: [
       {
         path: '',  // 空路径表示默认子路由
@@ -65,5 +67,16 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+// 移除路由守卫，不再检查认证状态
+// router.beforeEach((to, from, next) => {
+//   const token = localStorage.getItem('token');
+//   
+//   if (to.matched.some(record => record.meta.requiresAuth) && !token) {
+//     next({ name: 'Login' });
+//   } else {
+//     next();
+//   }
+// });
 
 export default router;

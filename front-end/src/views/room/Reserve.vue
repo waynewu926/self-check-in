@@ -24,9 +24,9 @@
         <el-form-item label="房间类型">
           <el-select v-model="filterForm.roomType" placeholder="选择房间类型">
             <el-option label="全部" value="" />
-            <el-option label="标准间" value="standard" />
-            <el-option label="豪华间" value="deluxe" />
-            <el-option label="套房" value="suite" />
+            <el-option label="标准间" value="0" />
+            <el-option label="豪华间" value="1" />
+            <el-option label="套房" value="2" />
           </el-select>
         </el-form-item>
         <el-form-item label="价格区间">
@@ -71,11 +71,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="capacity" label="可住人数" width="120" />
-        <el-table-column prop="facilities" label="设施">
+        <el-table-column prop="rating" label="评分" width="120">
           <template #default="scope">
-            <el-tag v-for="facility in scope.row.facilities" :key="facility" size="small" class="facility-tag">
-              {{ facility }}
-            </el-tag>
+            <el-rate v-model="scope.row.rating" disabled text-color="#ff9900" />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
@@ -151,6 +149,9 @@
             <el-descriptions-item label="面积">{{ selectedRoom.area }}㎡</el-descriptions-item>
             <el-descriptions-item label="楼层">{{ selectedRoom.floor }}层</el-descriptions-item>
             <el-descriptions-item label="窗户">{{ selectedRoom.hasWindow ? '有窗' : '无窗' }}</el-descriptions-item>
+            <el-descriptions-item label="评分">
+              <el-rate v-model="selectedRoom.rating" disabled text-color="#ff9900" />
+            </el-descriptions-item>
             <el-descriptions-item label="设施" :span="2">
               <el-tag v-for="facility in selectedRoom.facilities" :key="facility" size="small" class="facility-tag">
                 {{ facility }}
@@ -174,7 +175,7 @@
     <el-dialog v-model="verificationDialogVisible" title="验证码确认" width="30%">
       <div class="verification-content">
         <p>验证码已发送至您的手机：{{ maskPhone(bookingForm.phone) }}</p>
-        <el-input v-model="verificationCode" placeholder="请输入验证码" maxlength="6">
+        <el-input v-model="verificationCode" placeholder="请输入验证码" maxlength="4">
           <template #prefix>
             <el-icon><message /></el-icon>
           </template>
@@ -224,14 +225,15 @@ const rooms = ref([
   {
     id: 1,
     roomNumber: '201',
-    roomType: 'standard',
+    roomType: '0', // 标准间
     price: 399,
     capacity: 2,
     bedType: '双床',
     area: 25,
     floor: 2,
     hasWindow: true,
-    facilities: ['免费WiFi', '空调', '电视', '热水淋浴'],
+    rating: 4.5,
+    facilities: ['免费WiFi', '空调', '冰箱', '电视'],
     description: '舒适标准间，配备两张单人床，适合商务出行或朋友同行。',
     images: [
       'https://example.com/room1-1.jpg',
@@ -241,14 +243,15 @@ const rooms = ref([
   {
     id: 2,
     roomNumber: '301',
-    roomType: 'deluxe',
+    roomType: '1', // 豪华间
     price: 599,
     capacity: 2,
     bedType: '大床',
     area: 30,
     floor: 3,
     hasWindow: true,
-    facilities: ['免费WiFi', '空调', '电视', '热水淋浴', '迷你吧', '浴缸'],
+    rating: 4.8,
+    facilities: ['免费WiFi', '空调', '冰箱', '电视', '洗衣机', '烘干机'],
     description: '豪华大床房，配备一张1.8米大床，提供更宽敞的空间和更高品质的设施。',
     images: [
       'https://example.com/room2-1.jpg',
@@ -258,14 +261,15 @@ const rooms = ref([
   {
     id: 3,
     roomNumber: '501',
-    roomType: 'suite',
+    roomType: '2', // 套房
     price: 899,
     capacity: 4,
     bedType: '大床+沙发床',
     area: 45,
     floor: 5,
     hasWindow: true,
-    facilities: ['免费WiFi', '空调', '电视', '热水淋浴', '迷你吧', '浴缸', '客厅', '书桌'],
+    rating: 4.9,
+    facilities: ['免费WiFi', '空调', '冰箱', '电视', '洗衣机', '烘干机', '客厅', '投影仪'],
     description: '豪华套房，独立客厅和卧室，提供最高级别的住宿体验。',
     images: [
       'https://example.com/room3-1.jpg',
@@ -277,9 +281,9 @@ const rooms = ref([
 // 获取房间类型名称
 const getRoomTypeName = (type) => {
   const typeMap = {
-    standard: '标准间',
-    deluxe: '豪华间',
-    suite: '套房'
+    '0': '标准间',
+    '1': '豪华间',
+    '2': '套房'
   }
   return typeMap[type] || type
 }
@@ -287,9 +291,9 @@ const getRoomTypeName = (type) => {
 // 获取房间类型标签样式
 const getRoomTypeTag = (type) => {
   const tagMap = {
-    standard: '',
-    deluxe: 'success',
-    suite: 'warning'
+    '0': '',
+    '1': 'success',
+    '2': 'warning'
   }
   return tagMap[type] || ''
 }
@@ -381,8 +385,10 @@ const submitBooking = () => {
 
 // 发送验证码
 const sendVerificationCode = () => {
+  // 生成4位数字验证码
+  const code = Math.floor(1000 + Math.random() * 9000)
   // 模拟发送验证码
-  ElMessage.success(`验证码已发送至 ${maskPhone(bookingForm.phone)}`)
+  ElMessage.success(`验证码已发送至 ${maskPhone(bookingForm.phone)}，验证码为：${code}`)
   
   // 倒计时
   countdown.value = 60

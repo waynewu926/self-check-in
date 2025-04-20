@@ -6,12 +6,19 @@
       <!-- 提交反馈标签页 -->
       <el-tab-pane label="提交反馈" name="submit-feedback">
         <el-card class="feedback-form-card">
+          <template #header>
+            <div class="card-header">
+              <span>酒店服务反馈</span>
+            </div>
+          </template>
+          
           <el-form :model="feedbackForm" label-width="100px" :rules="feedbackRules" ref="feedbackFormRef">
             <el-form-item label="反馈类型" prop="type">
               <el-select v-model="feedbackForm.type" placeholder="请选择反馈类型">
                 <el-option label="设施问题" value="facility" />
                 <el-option label="服务问题" value="service" />
                 <el-option label="环境问题" value="environment" />
+                <el-option label="餐饮问题" value="food" />
                 <el-option label="其他问题" value="other" />
               </el-select>
             </el-form-item>
@@ -45,6 +52,12 @@
       <!-- 提交评价标签页 -->
       <el-tab-pane label="提交评价" name="submit-rating">
         <el-card class="rating-form-card">
+          <template #header>
+            <div class="card-header">
+              <span>住宿体验评价</span>
+            </div>
+          </template>
+          
           <el-form :model="ratingForm" label-width="100px" :rules="ratingRules" ref="ratingFormRef">
             <el-form-item label="房间环境" prop="roomRating">
               <el-rate
@@ -98,6 +111,13 @@
       <!-- 反馈记录标签页 -->
       <el-tab-pane label="反馈记录" name="feedback-history">
         <el-card class="history-card">
+          <template #header>
+            <div class="card-header">
+              <span>我的反馈记录</span>
+              <el-tag v-if="feedbackHistory.length > 0" type="info">共 {{ feedbackHistory.length }} 条记录</el-tag>
+            </div>
+          </template>
+          
           <el-empty v-if="feedbackHistory.length === 0" description="暂无反馈记录"></el-empty>
           
           <el-timeline v-else>
@@ -125,6 +145,13 @@
       <!-- 评价记录标签页 -->
       <el-tab-pane label="评价记录" name="rating-history">
         <el-card class="history-card">
+          <template #header>
+            <div class="card-header">
+              <span>我的评价记录</span>
+              <el-tag v-if="ratingHistory.length > 0" type="info">共 {{ ratingHistory.length }} 条记录</el-tag>
+            </div>
+          </template>
+          
           <el-empty v-if="ratingHistory.length === 0" description="暂无评价记录"></el-empty>
           
           <div v-else class="rating-history-list">
@@ -215,7 +242,7 @@ const submitFeedback = () => {
         submitTime: new Date().toLocaleString()
       })
       
-      ElMessage.success('反馈已提交')
+      ElMessage.success('反馈已提交，感谢您的宝贵意见')
       resetFeedbackForm()
     } else {
       ElMessage.error('请正确填写表单')
@@ -286,7 +313,7 @@ const submitRating = () => {
         submitTime: new Date().toLocaleString()
       })
       
-      ElMessage.success('评价已提交')
+      ElMessage.success('评价已提交，感谢您的反馈')
       resetRatingForm()
     } else {
       ElMessage.error('请正确填写表单')
@@ -316,6 +343,13 @@ const feedbackHistory = ref([
     suggestion: '建议增加前台人员或优化入住流程',
     status: 'pending',
     submitTime: '2023-06-02 14:20:00'
+  },
+  {
+    type: 'food',
+    description: '早餐品种较少，希望能增加一些当地特色美食',
+    suggestion: '可以考虑每天增加1-2种当地特色小吃',
+    status: 'processing',
+    submitTime: '2023-06-05 08:45:00'
   }
 ])
 
@@ -325,6 +359,7 @@ const getFeedbackTypeName = (type) => {
     'facility': '设施问题',
     'service': '服务问题',
     'environment': '环境问题',
+    'food': '餐饮问题',
     'other': '其他问题'
   }
   return typeMap[type] || type
@@ -387,6 +422,12 @@ const ratingHistory = ref([
 
 .feedback-tabs {
   margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .feedback-form-card, .rating-form-card, .history-card {

@@ -37,17 +37,10 @@
         </el-card>
       </el-tab-pane>
       
-      <!-- 卫生服务标签页 -->
+      <!-- 卫生服务标签页 - 独立出来 -->
       <el-tab-pane label="卫生服务" name="cleaning">
         <el-card class="cleaning-card">
           <el-form :model="cleaningForm" label-width="100px" :rules="cleaningRules" ref="cleaningFormRef">
-            <el-form-item label="服务类型" prop="serviceType">
-              <el-radio-group v-model="cleaningForm.serviceType">
-                <el-radio label="cleaning">房间清洁</el-radio>
-                <el-radio label="repair">设施维修</el-radio>
-              </el-radio-group>
-            </el-form-item>
-            
             <el-form-item label="期望时间" prop="expectedTime">
               <el-time-picker
                 v-model="cleaningForm.expectedTime"
@@ -62,13 +55,59 @@
                 v-model="cleaningForm.description"
                 type="textarea"
                 :rows="4"
-                placeholder="请详细描述您的需求或需要维修的设施"
+                placeholder="请详细描述您的清洁需求"
               />
             </el-form-item>
             
             <el-form-item>
               <el-button type="primary" @click="submitCleaningRequest">提交请求</el-button>
               <el-button @click="resetCleaningForm">重置</el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
+      
+      <!-- 维修服务标签页 - 新增 -->
+      <el-tab-pane label="维修服务" name="repair">
+        <el-card class="repair-card">
+          <el-form :model="repairForm" label-width="100px" :rules="repairRules" ref="repairFormRef">
+            <el-form-item label="维修类型" prop="repairType">
+              <el-select v-model="repairForm.repairType" placeholder="请选择维修类型">
+                <el-option label="水电设施" value="plumbing" />
+                <el-option label="电器设备" value="electrical" />
+                <el-option label="家具设施" value="furniture" />
+                <el-option label="其他问题" value="other" />
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item label="紧急程度" prop="urgency">
+              <el-radio-group v-model="repairForm.urgency">
+                <el-radio label="normal">一般</el-radio>
+                <el-radio label="urgent">紧急</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            
+            <el-form-item label="期望时间" prop="expectedTime">
+              <el-time-picker
+                v-model="repairForm.expectedTime"
+                format="HH:mm"
+                placeholder="选择期望服务时间"
+                :disabled-hours="disabledHours"
+              />
+            </el-form-item>
+            
+            <el-form-item label="详细说明" prop="description">
+              <el-input
+                v-model="repairForm.description"
+                type="textarea"
+                :rows="4"
+                placeholder="请详细描述需要维修的设施和问题"
+              />
+            </el-form-item>
+            
+            <el-form-item>
+              <el-button type="primary" @click="submitRepairRequest">提交请求</el-button>
+              <el-button @click="resetRepairForm">重置</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -90,6 +129,7 @@
                 <h4>{{ getServiceTypeName(record.type) }}</h4>
                 <p>状态: <el-tag :type="getServiceStatusType(record.status)">{{ getServiceStatusName(record.status) }}</el-tag></p>
                 <p v-if="record.type === 'food'">订单内容: {{ record.items.map(item => `${item.name} x${item.quantity}`).join(', ') }}</p>
+                <p v-else-if="record.type === 'repair'">维修类型: {{ getRepairTypeName(record.repairType) }}</p>
                 <p v-else>详细说明: {{ record.description }}</p>
                 <p v-if="record.expectedTime">期望时间: {{ record.expectedTime }}</p>
                 <p v-if="record.completedTime">完成时间: {{ record.completedTime }}</p>
@@ -102,6 +142,7 @@
     
     <!-- 购物车对话框 -->
     <el-dialog v-model="cartDialogVisible" title="购物车" width="50%">
+      <!-- 购物车内容保持不变 -->
       <el-table :data="cartItems" style="width: 100%">
         <el-table-column prop="name" label="菜品名称" />
         <el-table-column label="数量" width="150">
@@ -249,15 +290,37 @@ const submitFoodOrder = () => {
 // 卫生服务相关
 const cleaningFormRef = ref(null)
 const cleaningForm = reactive({
-  serviceType: 'cleaning',
   expectedTime: null,
   description: ''
 })
 
 // 表单验证规则
 const cleaningRules = {
-  serviceType: [
-    { required: true, message: '请选择服务类型', trigger: 'change' }
+  expectedTime: [
+    { required: true, message: '请选择期望服务时间', trigger: 'change' }
+  ],
+  description: [
+    { required: true, message: '请填写详细说明', trigger: 'blur' },
+    { min: 5, max: 200, message: '长度在 5 到 200 个字符', trigger: 'blur' }
+  ]
+}
+
+// 维修服务相关 - 新增
+const repairFormRef = ref(null)
+const repairForm = reactive({
+  repairType: '',
+  urgency: 'normal',
+  expectedTime: null,
+  description: ''
+})
+
+// 维修表单验证规则
+const repairRules = {
+  repairType: [
+    { required: true, message: '请选择维修类型', trigger: 'change' }
+  ],
+  urgency: [
+    { required: true, message: '请选择紧急程度', trigger: 'change' }
   ],
   expectedTime: [
     { required: true, message: '请选择期望服务时间', trigger: 'change' }
@@ -281,15 +344,40 @@ const submitCleaningRequest = () => {
       
       // 添加到服务记录
       serviceHistory.value.unshift({
-        type: cleaningForm.serviceType,
+        type: 'cleaning',
         status: 'pending',
         requestTime: new Date().toLocaleString(),
         expectedTime: cleaningForm.expectedTime ? cleaningForm.expectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
         description: cleaningForm.description
       })
       
-      ElMessage.success('服务请求已提交')
+      ElMessage.success('清洁服务请求已提交')
       resetCleaningForm()
+    } else {
+      ElMessage.error('请正确填写表单')
+    }
+  })
+}
+
+// 提交维修服务请求 - 新增
+const submitRepairRequest = () => {
+  repairFormRef.value.validate((valid) => {
+    if (valid) {
+      // 这里应该调用API提交请求
+      
+      // 添加到服务记录
+      serviceHistory.value.unshift({
+        type: 'repair',
+        repairType: repairForm.repairType,
+        urgency: repairForm.urgency,
+        status: 'pending',
+        requestTime: new Date().toLocaleString(),
+        expectedTime: repairForm.expectedTime ? repairForm.expectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
+        description: repairForm.description
+      })
+      
+      ElMessage.success('维修服务请求已提交')
+      resetRepairForm()
     } else {
       ElMessage.error('请正确填写表单')
     }
@@ -299,6 +387,22 @@ const submitCleaningRequest = () => {
 // 重置卫生服务表单
 const resetCleaningForm = () => {
   cleaningFormRef.value.resetFields()
+}
+
+// 重置维修服务表单 - 新增
+const resetRepairForm = () => {
+  repairFormRef.value.resetFields()
+}
+
+// 获取维修类型名称 - 新增
+const getRepairTypeName = (type) => {
+  const typeMap = {
+    'plumbing': '水电设施',
+    'electrical': '电器设备',
+    'furniture': '家具设施',
+    'other': '其他问题'
+  }
+  return typeMap[type] || type
 }
 
 // 服务记录相关
@@ -324,6 +428,8 @@ const serviceHistory = ref([
   },
   {
     type: 'repair',
+    repairType: 'plumbing',
+    urgency: 'urgent',
     status: 'processing',
     requestTime: '2023-06-02 09:15:00',
     expectedTime: '11:00',
@@ -378,7 +484,7 @@ const getServiceStatusType = (status) => {
   margin-bottom: 20px;
 }
 
-.menu-card, .cleaning-card, .history-card {
+.menu-card, .cleaning-card, .repair-card, .history-card {
   margin-bottom: 20px;
 }
 

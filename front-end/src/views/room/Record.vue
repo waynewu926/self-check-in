@@ -45,7 +45,7 @@
         <el-table-column prop="orderNumber" label="订单号" width="180" />
         <el-table-column prop="roomInfo" label="房间信息" width="150">
           <template #default="scope">
-            {{ scope.row.roomType }} - {{ scope.row.roomNumber }}
+            {{ getRoomTypeName(scope.row.roomType) }} - {{ scope.row.roomNumber }}
           </template>
         </el-table-column>
         <el-table-column label="入住时间" width="180">
@@ -113,7 +113,7 @@
         <el-divider content-position="center">房间信息</el-divider>
         
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="房间类型">{{ selectedOrder.roomType }}</el-descriptions-item>
+          <el-descriptions-item label="房间类型">{{ getRoomTypeName(selectedOrder.roomType) }}</el-descriptions-item>
           <el-descriptions-item label="房间号">{{ selectedOrder.roomNumber }}</el-descriptions-item>
           <el-descriptions-item label="入住日期">{{ formatDate(selectedOrder.checkInDate) }}</el-descriptions-item>
           <el-descriptions-item label="退房日期">{{ formatDate(selectedOrder.checkOutDate) }}</el-descriptions-item>
@@ -121,6 +121,11 @@
           <el-descriptions-item label="房间单价">¥{{ selectedOrder.roomPrice }}/晚</el-descriptions-item>
           <el-descriptions-item label="总价">
             <span class="price">¥{{ selectedOrder.price }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="房间设施" :span="2">
+            <el-tag v-for="facility in selectedOrder.facilities" :key="facility" size="small" class="facility-tag">
+              {{ facility }}
+            </el-tag>
           </el-descriptions-item>
         </el-descriptions>
         
@@ -162,85 +167,19 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const totalRecords = ref(100) // 模拟总记录数
 
-// 模拟预订记录数据
-const records = ref([
-  {
-    orderNumber: 'R202305150001',
-    roomType: '标准间',
-    roomNumber: '201',
-    checkInDate: new Date('2023-05-20'),
-    checkOutDate: new Date('2023-05-22'),
-    days: 2,
-    roomPrice: 399,
-    price: 798,
-    status: 'completed',
-    orderTime: new Date('2023-05-15 14:30:00'),
-    paymentMethod: '微信支付',
-    guestName: '张三',
-    idCard: '110101199001011234',
-    phone: '13800138000',
-    guestCount: 2,
-    remarks: ''
-  },
-  {
-    orderNumber: 'R202305200002',
-    roomType: '豪华间',
-    roomNumber: '301',
-    checkInDate: new Date('2023-05-25'),
-    checkOutDate: new Date('2023-05-27'),
-    days: 2,
-    roomPrice: 599,
-    price: 1198,
-    status: 'pending',
-    orderTime: new Date('2023-05-20 10:15:00'),
-    paymentMethod: '支付宝',
-    guestName: '李四',
-    idCard: '310101199202022345',
-    phone: '13900139000',
-    guestCount: 2,
-    remarks: '希望安排高层房间'
-  },
-  {
-    orderNumber: 'R202305250003',
-    roomType: '套房',
-    roomNumber: '501',
-    checkInDate: new Date('2023-06-01'),
-    checkOutDate: new Date('2023-06-03'),
-    days: 2,
-    roomPrice: 899,
-    price: 1798,
-    status: 'checked-in',
-    orderTime: new Date('2023-05-25 16:45:00'),
-    paymentMethod: '银行卡',
-    guestName: '王五',
-    idCard: '440101199303033456',
-    phone: '13700137000',
-    guestCount: 3,
-    remarks: '需要加床'
-  },
-  {
-    orderNumber: 'R202306010004',
-    roomType: '标准间',
-    roomNumber: '202',
-    checkInDate: new Date('2023-06-10'),
-    checkOutDate: new Date('2023-06-12'),
-    days: 2,
-    roomPrice: 399,
-    price: 798,
-    status: 'cancelled',
-    orderTime: new Date('2023-06-01 09:20:00'),
-    paymentMethod: '微信支付',
-    guestName: '赵六',
-    idCard: '510101199404044567',
-    phone: '13600136000',
-    guestCount: 1,
-    remarks: ''
-  }
-])
-
-// 订单详情相关
+// 详情对话框
 const detailDialogVisible = ref(false)
 const selectedOrder = ref({})
+
+// 获取房间类型名称
+const getRoomTypeName = (type) => {
+  const typeMap = {
+    '0': '标准间',
+    '1': '豪华间',
+    '2': '套房'
+  }
+  return typeMap[type] || type
+}
 
 // 获取状态名称
 const getStatusName = (status) => {
@@ -288,6 +227,86 @@ const maskIdCard = (idCard) => {
   if (!idCard || idCard.length < 15) return idCard
   return idCard.replace(/^(.{6})(?:\d+)(.{4})$/, '$1********$2')
 }
+
+// 模拟预订记录数据
+const records = ref([
+  {
+    orderNumber: 'R202305150001',
+    roomType: '0', // 标准间
+    roomNumber: '201',
+    checkInDate: new Date('2023-05-20'),
+    checkOutDate: new Date('2023-05-22'),
+    days: 2,
+    roomPrice: 399,
+    price: 798,
+    status: 'completed',
+    orderTime: new Date('2023-05-15 14:30:00'),
+    paymentMethod: '微信支付',
+    guestName: '张三',
+    idCard: '110101199001011234',
+    phone: '13800138000',
+    guestCount: 2,
+    remarks: '',
+    facilities: ['免费WiFi', '空调', '冰箱', '电视']
+  },
+  {
+    orderNumber: 'R202305200002',
+    roomType: '1', // 豪华间
+    roomNumber: '301',
+    checkInDate: new Date('2023-05-25'),
+    checkOutDate: new Date('2023-05-27'),
+    days: 2,
+    roomPrice: 599,
+    price: 1198,
+    status: 'pending',
+    orderTime: new Date('2023-05-20 10:15:00'),
+    paymentMethod: '支付宝',
+    guestName: '李四',
+    idCard: '310101199202022345',
+    phone: '13900139000',
+    guestCount: 2,
+    remarks: '希望安排高层房间',
+    facilities: ['免费WiFi', '空调', '冰箱', '电视', '洗衣机', '烘干机']
+  },
+  {
+    orderNumber: 'R202305250003',
+    roomType: '2', // 套房
+    roomNumber: '501',
+    checkInDate: new Date('2023-06-01'),
+    checkOutDate: new Date('2023-06-03'),
+    days: 2,
+    roomPrice: 899,
+    price: 1798,
+    status: 'checked-in',
+    orderTime: new Date('2023-05-25 16:45:00'),
+    paymentMethod: '银行卡',
+    guestName: '王五',
+    idCard: '440101199303033456',
+    phone: '13700137000',
+    guestCount: 3,
+    remarks: '需要加床',
+    facilities: ['免费WiFi', '空调', '冰箱', '电视', '洗衣机', '烘干机', '客厅', '投影仪']
+  },
+  {
+    orderNumber: 'R202306010004',
+    roomType: '0', // 标准间
+    roomNumber: '202',
+    checkInDate: new Date('2023-06-10'),
+    checkOutDate: new Date('2023-06-12'),
+    days: 2,
+    roomPrice: 399,
+    price: 798,
+    status: 'cancelled',
+    orderTime: new Date('2023-06-01 09:20:00'),
+    paymentMethod: '微信支付',
+    guestName: '赵六',
+    idCard: '510101199404044567',
+    phone: '13600136000',
+    guestCount: 1,
+    remarks: '',
+    facilities: ['免费WiFi', '空调', '冰箱', '电视']
+  }
+])
 
 // 搜索记录
 const searchRecords = () => {
@@ -383,5 +402,10 @@ const handleCurrentChange = (page) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.facility-tag {
+  margin-right: 5px;
+  margin-bottom: 5px;
 }
 </style>
