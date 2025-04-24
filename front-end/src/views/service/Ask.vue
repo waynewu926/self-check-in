@@ -3,41 +3,7 @@
     <h2 class="page-title">服务请求</h2>
     
     <el-tabs v-model="activeTab" class="service-tabs">
-      <!-- 餐饮服务标签页 -->
-      <el-tab-pane label="餐饮服务" name="food">
-        <el-card class="menu-card">
-          <template #header>
-            <div class="card-header">
-              <span>菜单</span>
-              <el-button type="primary" size="small" @click="showCart" :disabled="cartItems.length === 0">
-                购物车 ({{ cartItems.length }})
-              </el-button>
-            </div>
-          </template>
-          
-          <!-- 菜品分类 -->
-          <el-tabs v-model="foodCategory">
-            <el-tab-pane v-for="category in foodCategories" :key="category.value" :label="category.label" :name="category.value">
-              <div class="food-list">
-                <el-card v-for="food in getFoodsByCategory(category.value)" :key="food.id" class="food-item">
-                  <div class="food-content">
-                    <div class="food-info">
-                      <h3>{{ food.name }}</h3>
-                      <p class="food-desc">{{ food.description }}</p>
-                      <div class="food-price">¥{{ food.price }}</div>
-                    </div>
-                    <div class="food-action">
-                      <el-button type="primary" size="small" @click="addToCart(food)">添加</el-button>
-                    </div>
-                  </div>
-                </el-card>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
-        </el-card>
-      </el-tab-pane>
-      
-      <!-- 卫生服务标签页 - 独立出来 -->
+
       <el-tab-pane label="卫生服务" name="cleaning">
         <el-card class="cleaning-card">
           <el-form :model="cleaningForm" label-width="100px" :rules="cleaningRules" ref="cleaningFormRef">
@@ -128,8 +94,7 @@
               <el-card class="history-item-card">
                 <h4>{{ getServiceTypeName(record.type) }}</h4>
                 <p>状态: <el-tag :type="getServiceStatusType(record.status)">{{ getServiceStatusName(record.status) }}</el-tag></p>
-                <p v-if="record.type === 'food'">订单内容: {{ record.items.map(item => `${item.name} x${item.quantity}`).join(', ') }}</p>
-                <p v-else-if="record.type === 'repair'">维修类型: {{ getRepairTypeName(record.repairType) }}</p>
+                <p v-if="record.type === 'repair'">维修类型: {{ getRepairTypeName(record.repairType) }}</p>
                 <p v-else>详细说明: {{ record.description }}</p>
                 <p v-if="record.expectedTime">期望时间: {{ record.expectedTime }}</p>
                 <p v-if="record.completedTime">完成时间: {{ record.completedTime }}</p>
@@ -139,44 +104,6 @@
         </el-card>
       </el-tab-pane>
     </el-tabs>
-    
-    <!-- 购物车对话框 -->
-    <el-dialog v-model="cartDialogVisible" title="购物车" width="50%">
-      <!-- 购物车内容保持不变 -->
-      <el-table :data="cartItems" style="width: 100%">
-        <el-table-column prop="name" label="菜品名称" />
-        <el-table-column label="数量" width="150">
-          <template #default="scope">
-            <el-input-number v-model="scope.row.quantity" :min="1" :max="10" size="small" />
-          </template>
-        </el-table-column>
-        <el-table-column label="单价" width="100">
-          <template #default="scope">
-            <span>¥{{ scope.row.price }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="小计" width="100">
-          <template #default="scope">
-            <span class="subtotal">¥{{ (scope.row.price * scope.row.quantity).toFixed(2) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100">
-          <template #default="scope">
-            <el-button type="danger" size="small" @click="removeFromCart(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <div class="cart-footer">
-        <div class="cart-total">
-          总计: <span class="total-price">¥{{ calculateTotal() }}</span>
-        </div>
-        <div class="cart-actions">
-          <el-button @click="cartDialogVisible = false">继续点餐</el-button>
-          <el-button type="primary" @click="submitFoodOrder">提交订单</el-button>
-        </div>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -185,109 +112,9 @@ import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 当前激活的标签页
-const activeTab = ref('food')
+const activeTab = ref('cleaning') // 默认显示清洁服务
 
-// 餐饮服务相关
-const foodCategory = ref('main')
-const foodCategories = [
-  { label: '主食', value: 'main' },
-  { label: '小吃', value: 'snack' },
-  { label: '饮料', value: 'drink' },
-  { label: '甜点', value: 'dessert' }
-]
-
-// 模拟菜品数据
-const foodList = [
-  { id: 1, name: '牛肉面', category: 'main', price: 38, description: '精选牛肉，配以手工面条，汤底浓郁' },
-  { id: 2, name: '宫保鸡丁', category: 'main', price: 42, description: '鸡肉鲜嫩，配以花生和干辣椒，口感丰富' },
-  { id: 3, name: '水煮鱼', category: 'main', price: 58, description: '新鲜鱼肉，麻辣鲜香，配以豆芽和青菜' },
-  { id: 4, name: '炒饭', category: 'main', price: 28, description: '蛋香浓郁，配以各种蔬菜和肉类' },
-  { id: 5, name: '薯条', category: 'snack', price: 18, description: '外酥里嫩，配以番茄酱' },
-  { id: 6, name: '鸡翅', category: 'snack', price: 26, description: '外脆里嫩，香辣可口' },
-  { id: 7, name: '可乐', category: 'drink', price: 8, description: '冰镇可口可乐，提神解渴' },
-  { id: 8, name: '果汁', category: 'drink', price: 12, description: '新鲜水果制作，营养健康' },
-  { id: 9, name: '提拉米苏', category: 'dessert', price: 22, description: '经典意式甜点，口感细腻' },
-  { id: 10, name: '芝士蛋糕', category: 'dessert', price: 24, description: '浓郁芝士风味，甜而不腻' }
-]
-
-// 根据分类获取菜品
-const getFoodsByCategory = (category) => {
-  return foodList.filter(food => food.category === category)
-}
-
-// 购物车相关
-const cartItems = ref([])
-const cartDialogVisible = ref(false)
-
-// 添加到购物车
-const addToCart = (food) => {
-  const existingItem = cartItems.value.find(item => item.id === food.id)
-  if (existingItem) {
-    existingItem.quantity++
-  } else {
-    cartItems.value.push({
-      id: food.id,
-      name: food.name,
-      price: food.price,
-      quantity: 1
-    })
-  }
-  ElMessage.success(`已添加 ${food.name} 到购物车`)
-}
-
-// 从购物车移除
-const removeFromCart = (item) => {
-  const index = cartItems.value.findIndex(cartItem => cartItem.id === item.id)
-  if (index !== -1) {
-    cartItems.value.splice(index, 1)
-  }
-}
-
-// 计算总价
-const calculateTotal = () => {
-  return cartItems.value.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)
-}
-
-// 显示购物车
-const showCart = () => {
-  cartDialogVisible.value = true
-}
-
-// 提交餐饮订单
-const submitFoodOrder = () => {
-  if (cartItems.value.length === 0) {
-    ElMessage.warning('购物车为空')
-    return
-  }
-  
-  // 这里应该调用API提交订单
-  ElMessageBox.confirm(
-    '确认提交订单吗？',
-    '提交订单',
-    {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'info'
-    }
-  ).then(() => {
-    // 添加到服务记录
-    serviceHistory.value.unshift({
-      type: 'food',
-      status: 'processing',
-      requestTime: new Date().toLocaleString(),
-      items: JSON.parse(JSON.stringify(cartItems.value)),
-      totalPrice: calculateTotal()
-    })
-    
-    ElMessage.success('订单已提交')
-    cartItems.value = []
-    cartDialogVisible.value = false
-  }).catch(() => {
-    // 用户取消操作
-  })
-}
-
-// 卫生服务相关
+// 保留卫生服务相关代码
 const cleaningFormRef = ref(null)
 const cleaningForm = reactive({
   expectedTime: null,
@@ -408,17 +235,6 @@ const getRepairTypeName = (type) => {
 // 服务记录相关
 const serviceHistory = ref([
   {
-    type: 'food',
-    status: 'completed',
-    requestTime: '2023-06-01 18:30:00',
-    completedTime: '2023-06-01 19:15:00',
-    items: [
-      { name: '牛肉面', quantity: 1, price: 38 },
-      { name: '可乐', quantity: 2, price: 8 }
-    ],
-    totalPrice: '54.00'
-  },
-  {
     type: 'cleaning',
     status: 'completed',
     requestTime: '2023-06-01 10:00:00',
@@ -440,7 +256,6 @@ const serviceHistory = ref([
 // 获取服务类型名称
 const getServiceTypeName = (type) => {
   const typeMap = {
-    'food': '餐饮服务',
     'cleaning': '房间清洁',
     'repair': '设施维修'
   }
@@ -484,7 +299,7 @@ const getServiceStatusType = (status) => {
   margin-bottom: 20px;
 }
 
-.menu-card, .cleaning-card, .repair-card, .history-card {
+.cleaning-card, .repair-card, .history-card {
   margin-bottom: 20px;
 }
 
@@ -492,55 +307,6 @@ const getServiceStatusType = (status) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.food-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.food-item {
-  height: 100%;
-}
-
-.food-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.food-info {
-  flex-grow: 1;
-}
-
-.food-desc {
-  color: #606266;
-  font-size: 14px;
-  margin: 8px 0;
-}
-
-.food-price {
-  color: #f56c6c;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.food-action {
-  margin-top: auto;
-}
-
-.cart-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.total-price, .subtotal {
-  color: #f56c6c;
-  font-weight: bold;
 }
 
 .history-item-card {

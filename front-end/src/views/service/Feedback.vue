@@ -1,6 +1,6 @@
 <template>
   <div class="feedback-container">
-    <h2 class="page-title">反馈与评价</h2>
+    <h2 class="page-title">反馈</h2>
     
     <el-tabs v-model="activeTab" class="feedback-tabs">
       <!-- 提交反馈标签页 -->
@@ -49,65 +49,6 @@
         </el-card>
       </el-tab-pane>
       
-      <!-- 提交评价标签页 -->
-      <el-tab-pane label="提交评价" name="submit-rating">
-        <el-card class="rating-form-card">
-          <template #header>
-            <div class="card-header">
-              <span>住宿体验评价</span>
-            </div>
-          </template>
-          
-          <el-form :model="ratingForm" label-width="100px" :rules="ratingRules" ref="ratingFormRef">
-            <el-form-item label="房间环境" prop="roomRating">
-              <el-rate
-                v-model="ratingForm.roomRating"
-                :colors="rateColors"
-                show-score
-              />
-            </el-form-item>
-            
-            <el-form-item label="服务质量" prop="serviceRating">
-              <el-rate
-                v-model="ratingForm.serviceRating"
-                :colors="rateColors"
-                show-score
-              />
-            </el-form-item>
-            
-            <el-form-item label="设施便利" prop="facilityRating">
-              <el-rate
-                v-model="ratingForm.facilityRating"
-                :colors="rateColors"
-                show-score
-              />
-            </el-form-item>
-            
-            <el-form-item label="性价比" prop="valueRating">
-              <el-rate
-                v-model="ratingForm.valueRating"
-                :colors="rateColors"
-                show-score
-              />
-            </el-form-item>
-            
-            <el-form-item label="评价内容" prop="comment">
-              <el-input
-                v-model="ratingForm.comment"
-                type="textarea"
-                :rows="4"
-                placeholder="请分享您的住宿体验"
-              />
-            </el-form-item>
-            
-            <el-form-item>
-              <el-button type="primary" @click="submitRating">提交评价</el-button>
-              <el-button @click="resetRatingForm">重置</el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
-      
       <!-- 反馈记录标签页 -->
       <el-tab-pane label="反馈记录" name="feedback-history">
         <el-card class="history-card">
@@ -139,62 +80,6 @@
               </el-card>
             </el-timeline-item>
           </el-timeline>
-        </el-card>
-      </el-tab-pane>
-      
-      <!-- 评价记录标签页 -->
-      <el-tab-pane label="评价记录" name="rating-history">
-        <el-card class="history-card">
-          <template #header>
-            <div class="card-header">
-              <span>我的评价记录</span>
-              <el-tag v-if="ratingHistory.length > 0" type="info">共 {{ ratingHistory.length }} 条记录</el-tag>
-            </div>
-          </template>
-          
-          <el-empty v-if="ratingHistory.length === 0" description="暂无评价记录"></el-empty>
-          
-          <div v-else class="rating-history-list">
-            <el-card v-for="(record, index) in ratingHistory" :key="index" class="rating-history-item">
-              <div class="rating-history-header">
-                <span class="rating-time">{{ record.submitTime }}</span>
-                <div class="overall-rating">
-                  总体评分：
-                  <el-rate
-                    v-model="record.overallRating"
-                    disabled
-                    :colors="rateColors"
-                    show-score
-                  />
-                </div>
-              </div>
-              
-              <el-divider></el-divider>
-              
-              <div class="rating-details">
-                <div class="rating-detail-item">
-                  <span>房间环境：</span>
-                  <el-rate v-model="record.roomRating" disabled :colors="rateColors" />
-                </div>
-                <div class="rating-detail-item">
-                  <span>服务质量：</span>
-                  <el-rate v-model="record.serviceRating" disabled :colors="rateColors" />
-                </div>
-                <div class="rating-detail-item">
-                  <span>设施便利：</span>
-                  <el-rate v-model="record.facilityRating" disabled :colors="rateColors" />
-                </div>
-                <div class="rating-detail-item">
-                  <span>性价比：</span>
-                  <el-rate v-model="record.valueRating" disabled :colors="rateColors" />
-                </div>
-              </div>
-              
-              <div class="rating-comment">
-                <p><strong>评价内容：</strong>{{ record.comment }}</p>
-              </div>
-            </el-card>
-          </div>
         </el-card>
       </el-tab-pane>
     </el-tabs>
@@ -253,77 +138,6 @@ const submitFeedback = () => {
 // 重置反馈表单
 const resetFeedbackForm = () => {
   feedbackFormRef.value.resetFields()
-}
-
-// 评价表单相关
-const ratingFormRef = ref(null)
-const ratingForm = reactive({
-  roomRating: 0,
-  serviceRating: 0,
-  facilityRating: 0,
-  valueRating: 0,
-  comment: ''
-})
-
-// 评分颜色
-const rateColors = ['#F56C6C', '#E6A23C', '#909399', '#67C23A', '#409EFF']
-
-// 评价表单验证规则
-const ratingRules = {
-  roomRating: [
-    { required: true, message: '请对房间环境进行评分', trigger: 'change' }
-  ],
-  serviceRating: [
-    { required: true, message: '请对服务质量进行评分', trigger: 'change' }
-  ],
-  facilityRating: [
-    { required: true, message: '请对设施便利进行评分', trigger: 'change' }
-  ],
-  valueRating: [
-    { required: true, message: '请对性价比进行评分', trigger: 'change' }
-  ],
-  comment: [
-    { required: true, message: '请填写评价内容', trigger: 'blur' },
-    { min: 5, max: 500, message: '长度在 5 到 500 个字符', trigger: 'blur' }
-  ]
-}
-
-// 提交评价
-const submitRating = () => {
-  ratingFormRef.value.validate((valid) => {
-    if (valid) {
-      // 计算总体评分（四个维度的平均值）
-      const overallRating = (
-        ratingForm.roomRating +
-        ratingForm.serviceRating +
-        ratingForm.facilityRating +
-        ratingForm.valueRating
-      ) / 4
-      
-      // 这里应该调用API提交评价
-      
-      // 添加到评价记录
-      ratingHistory.value.unshift({
-        roomRating: ratingForm.roomRating,
-        serviceRating: ratingForm.serviceRating,
-        facilityRating: ratingForm.facilityRating,
-        valueRating: ratingForm.valueRating,
-        overallRating,
-        comment: ratingForm.comment,
-        submitTime: new Date().toLocaleString()
-      })
-      
-      ElMessage.success('评价已提交，感谢您的反馈')
-      resetRatingForm()
-    } else {
-      ElMessage.error('请正确填写表单')
-    }
-  })
-}
-
-// 重置评价表单
-const resetRatingForm = () => {
-  ratingFormRef.value.resetFields()
 }
 
 // 反馈记录相关
@@ -386,28 +200,6 @@ const getFeedbackStatusType = (status) => {
   }
   return typeMap[status] || ''
 }
-
-// 评价记录相关
-const ratingHistory = ref([
-  {
-    roomRating: 4,
-    serviceRating: 5,
-    facilityRating: 4,
-    valueRating: 4,
-    overallRating: 4.25,
-    comment: '整体体验非常好，服务人员态度友好，房间干净整洁，设施齐全。唯一的小问题是房间隔音效果一般。',
-    submitTime: '2023-06-03 10:45:00'
-  },
-  {
-    roomRating: 3,
-    serviceRating: 4,
-    facilityRating: 3,
-    valueRating: 3,
-    overallRating: 3.25,
-    comment: '服务态度不错，但房间设施有些陈旧，性价比一般。',
-    submitTime: '2023-05-15 16:30:00'
-  }
-])
 </script>
 
 <style scoped>

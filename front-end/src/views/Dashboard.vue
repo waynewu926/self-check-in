@@ -47,7 +47,7 @@
               <span>服务中心</span>
             </template>
             <el-menu-item index="/dashboard/service/ask">服务请求</el-menu-item>
-            <el-menu-item index="/dashboard/service/feedback">反馈与评价</el-menu-item>
+            <el-menu-item index="/dashboard/service/feedback">反馈</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </el-aside>
