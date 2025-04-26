@@ -4,14 +4,24 @@ import { createRouter, createWebHistory } from 'vue-router';
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard'  // 直接重定向到仪表盘
+    redirect: '/login'  // 一开始默认进入到登录界面
   },
-  // 删除登录和注册路由
+  // 登录和注册路由
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/account/Login.vue')
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/account/Register.vue')
+  },
   {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
-    // 移除认证要求
+    meta: { requiresAuth: true }, // 需要认证
     children: [
       {
         path: '',  // 空路径表示默认子路由
@@ -68,15 +78,15 @@ const router = createRouter({
   routes,
 });
 
-// 移除路由守卫，不再检查认证状态
-// router.beforeEach((to, from, next) => {
-//   const token = localStorage.getItem('token');
-//   
-//   if (to.matched.some(record => record.meta.requiresAuth) && !token) {
-//     next({ name: 'Login' });
-//   } else {
-//     next();
-//   }
-// });
+// 添加路由守卫，检查认证状态
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token');
+  
+  if (to.matched.some(record => record.meta.requiresAuth) && !token) {
+    next({ name: 'Login' });
+  } else {
+    next();
+  }
+});
 
 export default router;

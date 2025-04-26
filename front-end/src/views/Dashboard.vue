@@ -6,12 +6,12 @@
         <h2 class="system-title" @click="goToHome">智慧酒店自助入住系统</h2>
 
         <div class="user-info">
-          <el-dropdown>
-            <span>用户名</span>
+          <el-dropdown @command="handleCommand">
+            <span>{{ userName }}</span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item>个人信息</el-dropdown-item>
-                <el-dropdown-item>退出登录</el-dropdown-item>
+                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -62,11 +62,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+
+// 获取用户信息
+const userName = ref('用户')
+onMounted(() => {
+  const userInfo = localStorage.getItem('user')
+  if (userInfo) {
+    try {
+      const user = JSON.parse(userInfo)
+      userName.value = user.name || '用户'
+    } catch (e) {
+      console.error('解析用户信息失败', e)
+    }
+  }
+})
 
 // 计算当前激活的菜单项
 const activeMenu = computed(() => {
@@ -76,6 +90,20 @@ const activeMenu = computed(() => {
 // 点击标题返回首页
 const goToHome = () => {
   router.push('/dashboard')
+}
+
+// 处理下拉菜单命令
+const handleCommand = (command) => {
+  if (command === 'logout') {
+    // 清除登录信息
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  } else if (command === 'profile') {
+    // 跳转到个人信息页面，如果有的话
+    // router.push('/dashboard/profile')
+    ElMessage.info('个人信息功能开发中')
+  }
 }
 </script>
 
