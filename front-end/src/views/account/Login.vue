@@ -85,12 +85,17 @@ const handleLogin = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
+
   height: 100vh;
+
   background-color: #f5f7fa;
 }
 
 .login-card {
   width: 400px;
+  padding: 30px;
+
+  border-radius: 25px;
 }
 
 .card-header {
