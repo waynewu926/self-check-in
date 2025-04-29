@@ -48,7 +48,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # 添加这一行，必须在CommonMiddleware之前
+    'corsheaders.middleware.CorsMiddleware',  # 添加这一行，必须在 CommonMiddleware 之前
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -56,8 +56,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 添加CORS配置
-CORS_ALLOW_ALL_ORIGINS = True  # 在开发环境中允许所有来源
+# 添加 CORS 配置
+CORS_ALLOW_ORIGINS = [
+    "http://127.0.0.1:5173"  # 允许的前端域名
+]
+CORS_ALLOW_CREDENTIALS = True  # 允许携带凭证（会话信息）
 
 # 允许的HTTP方法
 CORS_ALLOW_METHODS = [

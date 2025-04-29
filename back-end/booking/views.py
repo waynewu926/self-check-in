@@ -5,8 +5,23 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import datetime, timedelta
 import json
-
 from .models import Room, Booking
+
+def validate_dates(check_in_date, check_out_date, date_format='%Y-%m-%d'):
+    """验证日期格式和逻辑"""
+    try:
+        # 验证日期格式
+        check_in_date_obj = datetime.strptime(check_in_date, date_format).date()
+        check_out_date_obj = datetime.strptime(check_out_date, date_format).date()
+        
+        # 验证日期逻辑
+        if check_in_date_obj >= check_out_date_obj:
+            return False, '退房日期必须晚于入住日期'
+        
+        return True, (check_in_date_obj, check_out_date_obj)
+    
+    except (ValueError, TypeError):
+        return False, '日期格式不正确'
 
 def available_rooms(request):
     """获取可用房间列表"""
@@ -16,16 +31,12 @@ def available_rooms(request):
         check_out_date = request.GET.get('check_out_date')
         room_type = request.GET.get('room_type')
         
-        # 验证日期格式
-        try:
-            check_in_date = datetime.strptime(check_in_date, '%Y-%m-%d').date()
-            check_out_date = datetime.strptime(check_out_date, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            return JsonResponse({'error': '日期格式不正确'}, status=400)
+        # 验证日期
+        is_valid, result = validate_dates(check_in_date, check_out_date)
+        if not is_valid:
+            return JsonResponse({'error': result}, status=400)
         
-        # 验证日期逻辑
-        if check_in_date >= check_out_date:
-            return JsonResponse({'error': '退房日期必须晚于入住日期'}, status=400)
+        check_in_date, check_out_date = result
         
         # 构建查询条件
         query = Q()
@@ -90,16 +101,12 @@ def create_booking(request):
         if not all([room_id, check_in_date, check_out_date, guest_name, guest_phone, guest_id_card]):
             return JsonResponse({'error': '缺少必要参数'}, status=400)
         
-        # 验证日期格式
-        try:
-            check_in_date = datetime.strptime(check_in_date, '%Y-%m-%d').date()
-            check_out_date = datetime.strptime(check_out_date, '%Y-%m-%d').date()
-        except ValueError:
-            return JsonResponse({'error': '日期格式不正确'}, status=400)
+        # 验证日期
+        is_valid, result = validate_dates(check_in_date, check_out_date)
+        if not is_valid:
+            return JsonResponse({'error': result}, status=400)
         
-        # 验证日期逻辑
-        if check_in_date >= check_out_date:
-            return JsonResponse({'error': '退房日期必须晚于入住日期'}, status=400)
+        check_in_date, check_out_date = result
         
         # 验证房间是否可用
         room = get_object_or_404(Room, id=room_id)
@@ -118,15 +125,14 @@ def create_booking(request):
             guest_id_card=guest_id_card,
             guest_count=guest_count
         )
-        
-        # 生成订单号
-        booking.generate_booking_number()
-        
-        # 生成验证码和房间密码
+
+        # 先保存对象，获取主键
+        booking.save()
+
+        # 然后生成各种字段
+        booking_number = booking.generate_booking_number()
         code = booking.generate_code()
         room_password = booking.generate_room_password()
-        
-        booking.save()
         
         # 返回预订信息
         return JsonResponse({

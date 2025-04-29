@@ -10,12 +10,12 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('../views/account/Login.vue')
+    component: () => import('../views/user/Login.vue')
   },
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../views/account/Register.vue')
+    component: () => import('../views/user/Register.vue')
   },
   {
     path: '/dashboard',
@@ -51,23 +51,6 @@ const routes = [
         name: 'Checkin',
         component: () => import('../views/checkin/Index.vue')
       },
-      // 服务模块
-      {
-        path: 'service',
-        name: 'Service',
-        children: [
-          {
-            path: 'ask',
-            name: 'Ask',
-            component: () => import('../views/service/Ask.vue')
-          }, 
-          {
-            path: 'feedback',
-            name: 'Feedback',
-            component: () => import('../views/service/Feedback.vue')
-          }
-        ]
-      }
     ]
   }
 ];
