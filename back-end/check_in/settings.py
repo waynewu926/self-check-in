@@ -57,10 +57,16 @@ MIDDLEWARE = [
 ]
 
 # 添加 CORS 配置
-CORS_ALLOW_ORIGINS = [
-    "http://127.0.0.1:5173"  # 允许的前端域名
-]
+CORS_ALLOW_ALL_ORIGINS = True  # 允许所有来源
 CORS_ALLOW_CREDENTIALS = True  # 允许携带凭证（会话信息）
+
+# 允许的前端域名
+# CORS_ALLOW_ORIGINS = [
+#     "http://127.0.0.1:5173",
+#     "http://localhost:5173"   
+# ]
+# 不知道为什么这样配置就会报错，明明我前端域名就是这两个其中之一，搞不懂...
+
 
 # 允许的HTTP方法
 CORS_ALLOW_METHODS = [

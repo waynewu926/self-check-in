@@ -92,27 +92,20 @@ const handleRegister = async () => {
           confirm_password: registerForm.confirmPassword
         };
         
-        // console.log('发送的数据:', userData); // 调试用
-        
-        const response = await axios.post(
-          'http://localhost:8000/api/user/register/', 
-          userData
-        );
+        // 直接使用全局配置的axios，不需要重复设置withCredentials
+        const response = await axios.post('/api/user/register/', userData);
         
         ElMessage.success('注册成功，请登录');
         router.push('/login');
       } catch (error) {
         console.error('注册失败:', error);
-        console.log('错误详情:', error.response?.data);
         
-        // 显示更具体的错误信息
-        if (error.response?.data) {
+        // 适配Django后端的错误响应格式
+        if (error.response?.data?.message) {
+          ElMessage.error(error.response.data.message);
+        } else if (error.response?.data) {
           if (typeof error.response.data === 'string') {
             ElMessage.error(error.response.data);
-          } else if (error.response.data.error) {
-            ElMessage.error(error.response.data.error);
-          } else if (error.response.data.detail) {
-            ElMessage.error(error.response.data.detail);
           } else {
             ElMessage.error(JSON.stringify(error.response.data));
           }

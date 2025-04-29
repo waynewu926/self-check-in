@@ -21,7 +21,7 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true }, // 需要认证
+    meta: { requiresAuth: true }, // 需要路由守卫认证
     children: [
       {
         path: '',  // 空路径表示默认子路由
@@ -63,9 +63,9 @@ const router = createRouter({
 
 // 添加路由守卫，检查认证状态
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
+  const userInfo = localStorage.getItem('userInfo');
   
-  if (to.matched.some(record => record.meta.requiresAuth) && !token) {
+  if (to.matched.some(record => record.meta.requiresAuth) && !userInfo) {
     next({ name: 'Login' });
   } else {
     next();

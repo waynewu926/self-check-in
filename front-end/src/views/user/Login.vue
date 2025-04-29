@@ -58,20 +58,29 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true;
       try {
-        const response = await axios.post('http://localhost:8000/api/user/login/', {
+        // 直接使用全局配置的axios，不需要重复设置withCredentials和baseURL
+        const response = await axios.post('/api/user/login/', {
           phone: loginForm.phone,
           password: loginForm.password
         });
         
-        // 保存token和用户信息
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        // 保存用户信息到localStorage
+        localStorage.setItem('userInfo', JSON.stringify({
+          id: response.data.id,
+          name: response.data.name,
+          phone: response.data.phone
+        }));
         
         ElMessage.success('登录成功');
         router.push('/dashboard');
       } catch (error) {
         console.error('登录失败:', error);
-        ElMessage.error(error.response?.data?.error || '登录失败，请检查手机号和密码');
+        // 适配Django后端的错误响应格式
+        if (error.response?.data?.message) {
+          ElMessage.error(error.response.data.message);
+        } else {
+          ElMessage.error('登录失败，请检查手机号和密码');
+        }
       } finally {
         loading.value = false;
       }
