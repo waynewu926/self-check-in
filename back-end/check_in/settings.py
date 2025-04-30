@@ -91,6 +91,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True # 即使是 HTTP 也要设为 True，否则后端没法成功给前端 Set-Cookie
+
+
 ROOT_URLCONF = 'check_in.urls'
 
 TEMPLATES = [

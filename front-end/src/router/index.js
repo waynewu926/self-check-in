@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import axios from 'axios';
 
 // 定义路由配置
 const routes = [
@@ -62,13 +63,27 @@ const router = createRouter({
 });
 
 // 添加路由守卫，检查认证状态
-router.beforeEach((to, from, next) => {
-  const userInfo = localStorage.getItem('userInfo');
-  
-  if (to.matched.some(record => record.meta.requiresAuth) && !userInfo) {
-    next({ name: 'Login' });
-  } else {
+router.beforeEach(async (to, from, next) => {
+  // 如果路由不需要认证，直接放行
+  if (!to.matched.some(record => record.meta.requiresAuth)) {
     next();
+    return;
+  }
+  
+  try {
+    // 发送请求到后端验证用户是否已登录
+    const response = await axios.get('/api/user/info/') ;
+    if (response.data && response.data.success) {
+      // 用户已登录，允许访问
+      next();
+    } else {
+      // 用户未登录，重定向到登录页
+      next({ name: 'Login' });
+    }
+  } catch (error) {
+    console.error('验证登录状态失败:', error);
+    // 验证失败，重定向到登录页
+    next({ name: 'Login' });
   }
 });
 

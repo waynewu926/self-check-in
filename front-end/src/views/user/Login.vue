@@ -58,19 +58,11 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true;
       try {
-        // 直接使用全局配置的axios，不需要重复设置withCredentials和baseURL
+        // 发送登录请求，Django会自动设置会话Cookie
         const response = await axios.post('/api/user/login/', {
           phone: loginForm.phone,
           password: loginForm.password
         });
-        
-        // 保存用户信息到localStorage
-        localStorage.setItem('userInfo', JSON.stringify({
-          id: response.data.id,
-          name: response.data.name,
-          phone: response.data.phone
-        }));
-        
         ElMessage.success('登录成功');
         router.push('/dashboard');
       } catch (error) {

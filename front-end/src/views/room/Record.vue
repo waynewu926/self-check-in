@@ -278,14 +278,8 @@ const fetchBookings = async () => {
       params.status = filterForm.status
     }
     
-    // 移除withCredentials，使用Authorization头代替
-    const token = localStorage.getItem('token');
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
-    const response = await axios.get('/api/booking/list/', { 
-      params,
-      headers
-    })
+    // 移除 withCredentials 配置，因为已在 main.js 中全局设置
+    const response = await axios.get('/api/booking/list/', { params })
     
     // 处理响应数据
     if (response.data && response.data.bookings) {
@@ -359,13 +353,8 @@ const cancelOrder = (order) => {
     }
   ).then(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      
       await axios.post(`/api/booking/update-status/${order.id}/`, {
         status: 0  // 已取消
-      }, {
-        headers
       })
       ElMessage.success('预订已取消')
       fetchBookings()
@@ -448,9 +437,7 @@ const submitComment = async () => {
       }
     }
     
-    await axios.post(`/api/booking/add-comment/${selectedOrder.value.id}/`, commentData, {
-      headers
-    })
+    await axios.post(`/api/booking/add-comment/${selectedOrder.value.id}/`, commentData)
     
     ElMessage.success('评价提交成功')
     commentDialogVisible.value = false

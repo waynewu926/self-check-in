@@ -1,6 +1,6 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 import json
 from django.http import JsonResponse
@@ -32,7 +32,7 @@ def register(request):
         # 创建User模型实例
         user = User.objects.create_user(
             username=phone,  # 使用手机号作为用户名
-            password=password,  # create_user会自动哈希处理密码
+            password=password,  # create_user 会自动哈希处理密码
             first_name=name
         )
         
@@ -48,10 +48,10 @@ def login(request):
         phone = data.get('phone')
         password = data.get('password')
 
-        # 使用Django的认证系统
+        # 使用 Django 的认证系统
         user = authenticate(username=phone, password=password)
         if user is not None:
-            auth_login(request, user)  # 创建会话
+            auth_login(request, user)  # 创建用户Session
             
             return JsonResponse({
                 'message': '登录成功', 
@@ -65,6 +65,15 @@ def login(request):
 
     return JsonResponse({'message': '无效的请求方法'}, status=405)
 
+# 退出登录功能
+@csrf_exempt
+def logout(request):
+    if request.method == 'POST':
+        auth_logout(request)
+        return JsonResponse({'message': '退出登录成功'}, status=200)
+    
+    return JsonResponse({'message': '无效的请求方法'}, status=405)
+
 # 获取用户信息
 @login_required
 def user_info(request):
@@ -72,6 +81,9 @@ def user_info(request):
         # 获取当前登录用户
         user = request.user
         
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'message': '用户未登录'}, status=401)
+            
         return JsonResponse({
             'success': True,
             'data': {

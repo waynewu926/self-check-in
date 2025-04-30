@@ -92,7 +92,6 @@ const handleRegister = async () => {
           confirm_password: registerForm.confirmPassword
         };
         
-        // 直接使用全局配置的axios，不需要重复设置withCredentials
         const response = await axios.post('/api/user/register/', userData);
         
         ElMessage.success('注册成功，请登录');
