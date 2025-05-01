@@ -66,7 +66,7 @@
               <span class="room-price">¥{{ scope.row.price }}/晚</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" min-width="200">
+          <el-table-column label="操作" min-width="200" align="center">
             <template #default="scope">
               <div class="room-actions">
                 <el-button type="primary" size="small" @click="showRoomDetail(scope.row)">详情</el-button>
@@ -548,6 +548,7 @@ const handleCurrentChange = (page) => {
   display: flex;
   gap: 10px;
   justify-content: center;
+  width: 100%;
 }
 
 .room-detail {
