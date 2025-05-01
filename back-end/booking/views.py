@@ -31,6 +31,10 @@ def available_rooms(request):
         check_out_date = request.GET.get('check_out_date')
         room_type = request.GET.get('room_type')
         
+        # 获取分页参数
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        
         # 验证日期
         is_valid, result = validate_dates(check_in_date, check_out_date)
         if not is_valid:
@@ -58,7 +62,21 @@ def available_rooms(request):
                 }
                 available_rooms.append(room_data)
         
-        return JsonResponse({'rooms': available_rooms})
+        # 计算总记录数
+        total = len(available_rooms)
+        
+        # 分页处理
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_rooms = available_rooms[start_index:end_index]
+        
+        return JsonResponse({
+            'rooms': paginated_rooms,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total + page_size - 1) // page_size
+        })
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -153,9 +171,37 @@ def create_booking(request):
 def booking_list(request):
     """获取用户的预订列表"""
     try:
-        bookings = Booking.objects.filter(customer=request.user).order_by('-check_in_date')
-        booking_list = []
+        # 获取分页参数
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
         
+        # 获取筛选参数
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        status = request.GET.get('status')
+        
+        # 构建查询条件
+        query = Q(customer=request.user)
+        
+        if status is not None and status != '':
+            query &= Q(booking_status=int(status))
+            
+        if start_date and end_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                # 查找日期范围内有重叠的预订
+                query &= Q(check_in_date__lte=end_date, check_out_date__gte=start_date)
+            except ValueError:
+                pass
+        
+        # 获取总记录数
+        total_bookings = Booking.objects.filter(query).count()
+        
+        # 获取分页数据
+        bookings = Booking.objects.filter(query).order_by('-check_in_date')[(page-1)*page_size:page*page_size]
+        
+        booking_list = []
         for booking in bookings:
             booking_data = {
                 'id': booking.id,
@@ -167,10 +213,17 @@ def booking_list(request):
                 'total_price': booking.total_price,
                 'booking_status': booking.get_booking_status_display(),
                 'can_comment': booking.booking_status == 3,  # 已完成状态才能评价
+                'comment': booking.comment,  # 添加评价内容
             }
             booking_list.append(booking_data)
         
-        return JsonResponse({'bookings': booking_list})
+        return JsonResponse({
+            'bookings': booking_list,
+            'total': total_bookings,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total_bookings + page_size - 1) // page_size
+        })
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

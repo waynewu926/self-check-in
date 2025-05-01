@@ -297,7 +297,7 @@ const fetchBookings = async () => {
           room_type_name: getRoomTypeName(booking.room_type)
         }
       })
-      totalRecords.value = response.data.total || bookings.value.length
+      totalRecords.value = response.data.total || 0
     } else {
       bookings.value = []
       totalRecords.value = 0

@@ -48,24 +48,39 @@
       
       <el-empty v-if="availableRooms.length === 0" description="暂无可用房间"></el-empty>
       
-      <div v-else class="room-list">
-        <el-card v-for="room in availableRooms" :key="room.id" class="room-card">
-          <div class="room-info">
-            <div class="room-header">
-              <h3>{{ getRoomTypeName(room.room_type) }} - {{ room.room_number }}</h3>
-              <span class="room-price">¥{{ room.price }}/晚</span>
-            </div>
-            <div class="room-tags">
-              <el-tag v-for="(facility, index) in getRoomFacilities(room.room_type)" :key="index" size="small">
-                {{ facility }}
-              </el-tag>
-            </div>
-            <div class="room-actions">
-              <el-button type="primary" size="small" @click="showRoomDetail(room)">详情</el-button>
-              <el-button type="success" size="small" @click="showBookingForm(room)">预订</el-button>
-            </div>
-          </div>
-        </el-card>
+      <div v-else class="room-table-container">
+        <el-table :data="availableRooms" stripe style="width: 100%" v-loading="loading">
+          <el-table-column prop="room_number" label="房间号" width="120" />
+          <el-table-column label="房型" width="150">
+            <template #default="scope">
+              {{ getRoomTypeName(scope.row.room_type) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="价格" width="150">
+            <template #default="scope">
+              <span class="room-price">¥{{ scope.row.price }}/晚</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200">
+            <template #default="scope">
+              <div class="room-actions">
+                <el-button type="primary" size="small" @click="showRoomDetail(scope.row)">详情</el-button>
+                <el-button type="success" size="small" @click="showBookingForm(scope.row)">预订</el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <!-- 添加分页组件 -->
+        <div class="pagination-container">
+          <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="10"
+            layout="total, prev, pager, next, jumper"
+            :total="totalRooms"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </div>
     </el-card>
     
@@ -178,6 +193,11 @@ const filterForm = reactive({
 const availableRooms = ref([])
 const loading = ref(false)
 
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalRooms = ref(0)
+
 // 详情对话框
 const detailDialogVisible = ref(false)
 const selectedRoom = ref({})
@@ -256,22 +276,42 @@ const getRoomTypeName = (type) => {
 
 // 获取房间设施
 const getRoomFacilities = (type) => {
-  const facilitiesMap = {
+  // 处理数字类型的room_type
+  const numericTypeMap = {
     '1': ['免费WiFi', '空调', '冰箱', '电视'],
     '2': ['免费WiFi', '空调', '冰箱', '电视', '洗衣机', '烘干机'],
     '3': ['免费WiFi', '空调', '冰箱', '电视', '洗衣机', '烘干机', '客厅', '投影仪']
   }
-  return facilitiesMap[type] || []
+  
+  // 处理字符串类型的room_type
+  const stringTypeMap = {
+    '标准间': numericTypeMap['1'],
+    '豪华间': numericTypeMap['2'],
+    '套房': numericTypeMap['3']
+  }
+  
+  // 先尝试使用数字映射，如果没有再尝试使用字符串映射
+  return numericTypeMap[type] || stringTypeMap[type] || []
 }
 
 // 获取房间描述
 const getRoomDescription = (type) => {
-  const descriptionMap = {
+  // 处理数字类型的room_type
+  const numericTypeMap = {
     '1': '标准间配备基本舒适设施，适合商务出行或短期休闲旅行。房间干净整洁，提供免费WiFi、空调、冰箱和电视等基本设施，满足您的日常需求。',
     '2': '豪华间提供更加舒适的住宿体验，除了标准间的所有设施外，还配备了洗衣机和烘干机，让您的长期住宿更加便利。房间宽敞明亮，装修精美，为您提供高品质的住宿体验。',
     '3': '套房是我们酒店的高端住宿选择，拥有独立的客厅和卧室，配备齐全的设施，包括投影仪等娱乐设备。宽敞的空间和豪华的装修，让您享受到家一般的舒适与便利。'
   }
-  return descriptionMap[type] || '暂无描述'
+  
+  // 处理字符串类型的room_type
+  const stringTypeMap = {
+    '标准间': numericTypeMap['1'],
+    '豪华间': numericTypeMap['2'],
+    '套房': numericTypeMap['3']
+  }
+  
+  // 先尝试使用数字映射，如果没有再尝试使用字符串映射
+  return numericTypeMap[type] || stringTypeMap[type] || '暂无描述'
 }
 
 // 格式化日期
@@ -317,7 +357,9 @@ const searchRooms = async () => {
   try {
     const params = {
       check_in_date: formatDate(filterForm.checkInDate),
-      check_out_date: formatDate(filterForm.checkOutDate)
+      check_out_date: formatDate(filterForm.checkOutDate),
+      page: currentPage.value,
+      page_size: pageSize.value
     }
     
     if (filterForm.roomType) {
@@ -326,10 +368,12 @@ const searchRooms = async () => {
     
     const response = await axios.get('/api/booking/available-rooms/', { params })
     availableRooms.value = response.data.rooms || []
+    totalRooms.value = response.data.total || 0
   } catch (error) {
     console.error('获取可用房间失败:', error)
     ElMessage.error('获取可用房间失败，请稍后重试')
     availableRooms.value = []
+    totalRooms.value = 0
   } finally {
     loading.value = false
   }
@@ -340,6 +384,7 @@ const resetFilter = () => {
   filterForm.checkInDate = null
   filterForm.checkOutDate = null
   filterForm.roomType = ''
+  currentPage.value = 1
   availableRooms.value = []
 }
 
@@ -443,6 +488,18 @@ onMounted(() => {
   // 自动搜索当天可用房间
   searchRooms()
 })
+
+// 处理分页大小变化 - 由于固定为10个每页，此函数可以简化
+const handleSizeChange = (size) => {
+  pageSize.value = 10 // 固定为10
+  searchRooms()
+}
+
+// 处理页码变化
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+  searchRooms()
+}
 </script>
 
 <style scoped>
@@ -469,54 +526,17 @@ onMounted(() => {
   align-items: center;
 }
 
-.room-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.room-card {
-  transition: all 0.3s;
-}
-
-.room-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-}
-
-.room-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.room-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.room-header h3 {
-  margin: 0;
-  font-size: 18px;
+.room-table-container {
+  width: 100%;
 }
 
 .room-price {
   color: #f56c6c;
   font-weight: bold;
-  font-size: 18px;
-}
-
-.room-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 10px;
 }
 
 .room-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 10px;
 }
 
@@ -555,5 +575,11 @@ onMounted(() => {
   margin-top: 20px;
   color: #e6a23c;
   font-size: 14px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
