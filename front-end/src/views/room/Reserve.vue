@@ -386,11 +386,23 @@ const searchRooms = async () => {
 
 // 重置筛选条件
 const resetFilter = () => {
-  filterForm.checkInDate = null
-  filterForm.checkOutDate = null
+  // 设置默认入住日期为今天
+  const today = new Date()
+  filterForm.checkInDate = today
+  
+  // 设置默认退房日期为明天
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  filterForm.checkOutDate = tomorrow
+  
+  // 重置房型选择
   filterForm.roomType = ''
+  
+  // 重置页码
   currentPage.value = 1
-  availableRooms.value = []
+  
+  // 自动搜索当天可用房间
+  searchRooms()
 }
 
 // 显示房间详情
