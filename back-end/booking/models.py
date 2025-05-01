@@ -65,17 +65,12 @@ class Booking(models.Model):
     @classmethod
     def is_room_available(cls, room_id, check_in_date, check_out_date):
         """检查房间在指定日期范围内是否可用"""
-        # 查找该房间在指定日期范围内的有效预订
-        # 有效预订是指状态为待入住(1)或已入住(2)的预订
+        # 使用一个更高效的查询
         overlapping_bookings = cls.objects.filter(
             room_id=room_id,
             booking_status__in=[1, 2],  # 待入住或已入住
-        ).exclude(
-            # 排除完全在查询日期范围之前的预订
-            check_out_date__lte=check_in_date
-        ).exclude(
-            # 排除完全在查询日期范围之后的预订
-            check_in_date__gte=check_out_date
+            check_in_date__lt=check_out_date,  # 入住日期早于查询的退房日期
+            check_out_date__gt=check_in_date   # 退房日期晚于查询的入住日期
         )
         
         # 如果存在重叠的预订，则房间不可用
@@ -100,6 +95,8 @@ class Booking(models.Model):
             models.Index(fields=['booking_status']),
             models.Index(fields=['room', 'booking_status']),
             models.Index(fields=['check_in_date', 'check_out_date']),
+            # 添加更高效的复合索引
+            models.Index(fields=['room', 'booking_status', 'check_in_date', 'check_out_date'], name='booking_search_idx'),
         ]
     
 

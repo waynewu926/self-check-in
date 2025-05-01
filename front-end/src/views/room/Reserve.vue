@@ -439,6 +439,9 @@ onMounted(() => {
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
   filterForm.checkOutDate = tomorrow
+  
+  // 自动搜索当天可用房间
+  searchRooms()
 })
 </script>
 
