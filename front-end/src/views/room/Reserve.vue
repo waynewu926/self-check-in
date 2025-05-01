@@ -50,18 +50,18 @@
       
       <div v-else class="room-table-container">
         <el-table :data="availableRooms" stripe style="width: 100%" v-loading="loading">
-          <el-table-column prop="room_number" label="房间号" width="120" />
-          <el-table-column label="房型" width="150">
+          <el-table-column prop="room_number" label="房间号" min-width="120" />
+          <el-table-column label="房型" min-width="150">
             <template #default="scope">
               {{ getRoomTypeName(scope.row.room_type) }}
             </template>
           </el-table-column>
-          <el-table-column label="价格" width="150">
+          <el-table-column label="价格" min-width="150">
             <template #default="scope">
               <span class="room-price">¥{{ scope.row.price }}/晚</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200">
+          <el-table-column label="操作" min-width="200">
             <template #default="scope">
               <div class="room-actions">
                 <el-button type="primary" size="small" @click="showRoomDetail(scope.row)">详情</el-button>
@@ -538,6 +538,7 @@ const handleCurrentChange = (page) => {
 .room-actions {
   display: flex;
   gap: 10px;
+  justify-content: center;
 }
 
 .room-detail {
