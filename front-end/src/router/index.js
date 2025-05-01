@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import axios from 'axios';
+import { useUserStore } from '../stores/user';
 
 // 定义路由配置
 const routes = [
@@ -70,10 +70,19 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
   
+  // 使用Pinia存储
+  const userStore = useUserStore();
+  
+  // 如果已经认证过，直接放行
+  if (userStore.isAuthenticated) {
+    next();
+    return;
+  }
+  
+  // 尝试获取用户信息
   try {
-    // 发送请求到后端验证用户是否已登录
-    const response = await axios.get('/api/user/info/') ;
-    if (response.data && response.data.success) {
+    await userStore.fetchUserInfo();
+    if (userStore.isAuthenticated) {
       // 用户已登录，允许访问
       next();
     } else {

@@ -29,9 +29,10 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import axios from 'axios';
+import { useUserStore } from '../../stores/user';
 
 const router = useRouter();
+const userStore = useUserStore();
 const loginFormRef = ref(null);
 const loading = ref(false);
 
@@ -58,20 +59,14 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true;
       try {
-        // 发送登录请求，Django会自动设置会话Cookie
-        const response = await axios.post('/api/user/login/', {
-          phone: loginForm.phone,
-          password: loginForm.password
-        });
-        ElMessage.success('登录成功');
-        router.push('/dashboard');
-      } catch (error) {
-        console.error('登录失败:', error);
-        // 适配Django后端的错误响应格式
-        if (error.response?.data?.message) {
-          ElMessage.error(error.response.data.message);
+        // 使用Pinia store进行登录
+        const result = await userStore.login(loginForm.phone, loginForm.password);
+        
+        if (result.success) {
+          ElMessage.success('登录成功');
+          router.push('/dashboard');
         } else {
-          ElMessage.error('登录失败，请检查手机号和密码');
+          ElMessage.error(result.message);
         }
       } finally {
         loading.value = false;

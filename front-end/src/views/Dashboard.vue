@@ -6,7 +6,7 @@
 
       <div class="user-info">
         <el-dropdown @command="handleCommand">
-          <span style="color: white">{{ userName }}</span>
+          <span style="color: white">{{ userStore.userName }}</span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profile">个人信息</el-dropdown-item>
@@ -40,8 +40,8 @@
     <!-- 个人信息对话框 -->
     <el-dialog v-model="profileDialogVisible" title="个人信息" width="30%" center>
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="姓名">{{ userInfo.name }}</el-descriptions-item>
-        <el-descriptions-item label="手机号">{{ userInfo.phone }}</el-descriptions-item>
+        <el-descriptions-item label="姓名">{{ userStore.userInfo?.name }}</el-descriptions-item>
+        <el-descriptions-item label="手机号">{{ userStore.userInfo?.phone }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
         <span class="dialog-footer">
@@ -53,46 +53,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import { useUserStore } from '../stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 // 状态
 const profileDialogVisible = ref(false)
-const userName = ref('用户')
-const userInfo = ref({ name: '', phone: '' })
-
-// 初始化
-onMounted(() => {
-  fetchUserInfo()
-})
-
-// 获取用户信息
-const fetchUserInfo = async () => {
-  try {
-    const response = await axios.get('/api/user/info/')
-    if (response.data?.success) {
-      userInfo.value = response.data.data
-      userName.value = response.data.data.name || '用户'
-      
-    } else {
-      throw new Error('用户信息获取失败')
-    }
-  } catch (error) {
-    console.error(error)
-    handleSessionExpired()
-  }
-}
-
-// 检查登录状态并处理过期
-const handleSessionExpired = () => {
-  ElMessage.warning('登录已过期，请重新登录')
-  router.push('/login')
-}
 
 // 菜单激活状态
 const activeMenu = computed(() => route.path)
@@ -112,11 +83,12 @@ const handleCommand = async (command) => {
 // 退出登录
 const handleLogout = async () => {
   try {
-    await axios.post('/api/user/logout/')
-    ElMessage.success('退出登录成功')
-  } catch (error) {
-    console.error('退出登录失败', error)
-    ElMessage.warning('退出登录可能未完全成功')
+    const result = await userStore.logout()
+    if (result.success) {
+      ElMessage.success('退出登录成功')
+    } else {
+      ElMessage.warning(result.message)
+    }
   } finally {
     router.push('/login')
   }
