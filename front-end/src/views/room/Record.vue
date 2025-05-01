@@ -15,7 +15,7 @@
           />
         </el-form-item>
         <el-form-item label="订单状态">
-          <el-select v-model="filterForm.status" placeholder="选择订单状态">
+          <el-select v-model="filterForm.status" placeholder="选择订单状态" style="width: 180px; min-width: 180px;">
             <el-option label="全部" value="" />
             <el-option label="待入住" value="1" />
             <el-option label="已入住" value="2" />
@@ -487,6 +487,15 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 确保选择器文本可见 */
+:deep(.el-select .el-input__inner) {
+  color: #606266;
+}
+
+:deep(.el-select .el-select__tags) {
+  max-width: calc(100% - 30px);
 }
 
 .order-detail {
