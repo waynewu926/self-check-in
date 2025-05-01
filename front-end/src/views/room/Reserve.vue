@@ -24,7 +24,12 @@
           />
         </el-form-item>
         <el-form-item label="房型">
-          <el-select v-model="filterForm.roomType" placeholder="选择房型" clearable>
+          <el-select 
+            v-model="filterForm.roomType" 
+            placeholder="选择房型" 
+            clearable 
+            style="width: 180px; min-width: 180px;"
+            popper-class="room-type-select-dropdown">
             <el-option label="全部" value="" />
             <el-option label="标准间" value="1" />
             <el-option label="豪华间" value="2" />
@@ -178,8 +183,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage} from 'element-plus'
 import axios from 'axios'
 
 // 筛选表单
@@ -431,7 +436,11 @@ const submitBooking = async () => {
         
         const response = await axios.post('/api/booking/create/', bookingData)
         
-        if (response.data && response.data.success) {
+        // 添加调试信息，查看实际响应
+        console.log('预订响应数据:', response.data)
+        
+        // 检查响应中是否包含必要的信息（订单号和验证码）
+        if (response.data && (response.data.booking_number || response.data.code)) {
           bookingResult.value = response.data
           bookingDialogVisible.value = false
           codeDialogVisible.value = true
@@ -582,5 +591,18 @@ const handleCurrentChange = (page) => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 确保选择器文本可见 */
+:deep(.el-select .el-input__inner) {
+  color: #606266;
+}
+
+:deep(.el-select .el-select__tags) {
+  max-width: calc(100% - 30px);
+}
+
+.room-type-select-dropdown {
+  min-width: 180px !important;
 }
 </style>
