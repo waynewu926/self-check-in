@@ -319,12 +319,19 @@ def verify_check_in_code(request):
         # 计算密码有效期（退房日期）
         password_expiry = booking.check_out_date.strftime('%Y-%m-%d')
         
-        # 返回须知信息
+        # 返回完整的预订信息
         return JsonResponse({
             'success': True,
             'room_number': booking.room.room_number,
             'room_password': booking.room_password,
             'password_expiry': password_expiry,
+            'guest_name': booking.guest_name,
+            'guest_phone': booking.guest_phone,
+            'guest_id_card': booking.guest_id_card,
+            'guest_count': booking.guest_count,
+            'room_type': booking.room.room_detail.room_type,
+            'check_in_date': booking.check_in_date.strftime('%Y-%m-%d'),
+            'booking_number': booking.booking_number,
             'tips': '如需任何帮助，请拨打前台电话：8888'
         })
     

@@ -327,6 +327,14 @@ const verifyCode = async () => {
       bookingInfo.roomNumber = response.data.room_number
       roomPassword.value = response.data.room_password
       bookingInfo.checkOutDate = response.data.password_expiry
+      
+      // 添加：获取完整的预订信息
+      bookingInfo.guestName = response.data.guest_name || '未提供'
+      bookingInfo.phone = response.data.guest_phone || '未提供'
+      bookingInfo.roomType = response.data.room_type || ''
+      bookingInfo.checkInDate = response.data.check_in_date || ''
+      bookingInfo.guestCount = response.data.guest_count || 0
+      bookingInfo.orderNumber = response.data.booking_number || ''
       bookingInfo.tips = response.data.tips
       
       // 进入下一步
