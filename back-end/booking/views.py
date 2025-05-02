@@ -288,10 +288,52 @@ def add_comment(request, booking_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
 @csrf_exempt
 def verify_check_in_code(request):
     """验证入住验证码"""
+    if request.method != 'POST':
+        return JsonResponse({'error': '只支持POST请求'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        code = data.get('code')
+        update_status = data.get('update_status', True)  # 默认为True，保持向后兼容
+        
+        if not code:
+            return JsonResponse({'error': '验证码不能为空'}, status=400)
+        
+        # 查找匹配的预订记录
+        booking = Booking.objects.filter(
+            code=code,
+            booking_status=1  # 待入住状态
+        ).first()
+        
+        if not booking:
+            return JsonResponse({'error': '验证码无效或已过期'}, status=400)
+        
+        # 只有当update_status为True时才更新状态
+        if update_status:
+            booking.booking_status = 2  # 已入住
+            booking.save()
+        
+        # 计算密码有效期（退房日期）
+        password_expiry = booking.check_out_date.strftime('%Y-%m-%d')
+        
+        # 返回须知信息
+        return JsonResponse({
+            'success': True,
+            'room_number': booking.room.room_number,
+            'room_password': booking.room_password,
+            'password_expiry': password_expiry,
+            'tips': '如需任何帮助，请拨打前台电话：8888'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def confirm_check_in(request):
+    """确认入住，更新预订状态"""
     if request.method != 'POST':
         return JsonResponse({'error': '只支持POST请求'}, status=405)
     
@@ -315,16 +357,9 @@ def verify_check_in_code(request):
         booking.booking_status = 2  # 已入住
         booking.save()
         
-        # 计算密码有效期（退房日期）
-        password_expiry = booking.check_out_date.strftime('%Y-%m-%d')
-        
-        # 返回须知信息
         return JsonResponse({
             'success': True,
-            'room_number': booking.room.room_number,
-            'room_password': booking.room_password,
-            'password_expiry': password_expiry,
-            'tips': '如需任何帮助，可点击"服务"'
+            'message': '确认入住成功'
         })
     
     except Exception as e:

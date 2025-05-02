@@ -35,7 +35,7 @@
         </div>
         
         <div class="verification-actions">
-          <el-button type="primary" @click="verifyCode" :disabled="!isCodeComplete">验证</el-button>
+          <el-button type="primary" @click="verifyCode" :disabled="!isCodeComplete" :loading="verifying">验证</el-button>
           <el-button @click="resetCode">重置</el-button>
         </div>
         
@@ -72,7 +72,7 @@
             <li>请在退房当日中午12:00前办理退房手续</li>
             <li>房间内禁止吸烟，违者将收取清洁费</li>
             <li>请妥善保管您的贵重物品</li>
-            <li>如需任何帮助，可点击系统中的"服务"模块</li>
+            <li>如有任何问题，请联系前台</li>
           </ul>
         </div>
         
@@ -122,12 +122,11 @@
         
         <div class="reminder">
           <h3>温馨提示</h3>
-          <p>如需任何帮助，可点击系统中的"服务"模块或拨打前台电话：<span class="highlight-info">8888</span></p>
+          <p>{{ bookingInfo.tips || '如需任何帮助，请拨打前台电话：' }}<span class="highlight-info">8888</span></p>
         </div>
         
         <div class="success-actions">
           <el-button type="primary" @click="goToHome">返回首页</el-button>
-          <el-button @click="goToService">前往服务</el-button>
           <el-button type="warning" @click="goToCheckout">办理退房</el-button>
         </div>
       </div>
@@ -162,7 +161,7 @@
         </div>
         
         <div class="checkout-actions">
-          <el-button type="primary" @click="confirmCheckout">确认退房</el-button>
+          <el-button type="primary" @click="confirmCheckout" :loading="checkingOut">确认退房</el-button>
           <el-button @click="goToHome">取消</el-button>
         </div>
       </div>
@@ -177,11 +176,6 @@
           sub-title="感谢您的入住，期待您的再次光临！"
         >
         </el-result>
-        
-        <div class="checkout-feedback">
-          <p>您对本次入住体验满意吗？</p>
-          <el-rate v-model="satisfactionRate" :colors="colors"></el-rate>
-        </div>
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -208,6 +202,7 @@
 import { ref, reactive, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -224,32 +219,37 @@ const agreedToTerms = ref(false)
 // 帮助对话框
 const helpDialogVisible = ref(false)
 
+// 加载状态
+const verifying = ref(false)
+const checkingOut = ref(false)
+
 // 验证码是否完整
 const isCodeComplete = computed(() => {
   return verificationDigits.value.every(digit => digit !== '')
 })
 
-// 模拟的预订信息
+// 预订信息
 const bookingInfo = reactive({
-  guestName: '张三',
-  phone: '13800138000',
-  roomType: '1', // 豪华间
-  roomNumber: '301',
-  checkInDate: new Date('2023-07-15'),
-  checkOutDate: new Date('2023-07-17'),
-  guestCount: 2,
-  orderNumber: 'R202307100001'
+  guestName: '',
+  phone: '',
+  roomType: '',
+  roomNumber: '',
+  checkInDate: '',
+  checkOutDate: '',
+  guestCount: 0,
+  orderNumber: '',
+  tips: ''
 })
 
-// 生成的房间密码
-const roomPassword = ref('385921') // 6位数字密码
+// 房间密码
+const roomPassword = ref('')
 
 // 获取房间类型名称
 const getRoomTypeName = (type) => {
   const typeMap = {
-    '0': '标准间',
-    '1': '豪华间',
-    '2': '套房'
+    '1': '标准间',
+    '2': '豪华间',
+    '3': '套房'
   }
   return typeMap[type] || type
 }
@@ -301,16 +301,46 @@ const resetCode = () => {
 }
 
 // 验证验证码
-const verifyCode = () => {
+const verifyCode = async () => {
   const code = verificationDigits.value.join('')
   
-  // 模拟验证过程，实际应该调用API
-  if (code === '1234') { // 假设正确的验证码是1234
-    ElMessage.success('验证码验证成功')
-    activeStep.value = 1
-  } else {
-    ElMessage.error('验证码错误，请重新输入')
+  if (!code) {
+    ElMessage.error('请输入验证码')
+    return
+  }
+  
+  verifying.value = true
+  try {
+    // 修改：使用新的API端点，只验证不更新状态
+    const response = await axios.post('/api/booking/verify-check-in-code/', { 
+      code,
+      update_status: false // 添加参数，表示不更新状态
+    })
+    
+    if (response.data.success) {
+      ElMessage.success('验证码验证成功')
+      
+      // 保存验证码，用于后续确认入住
+      bookingInfo.code = code
+      
+      // 更新预订信息
+      bookingInfo.roomNumber = response.data.room_number
+      roomPassword.value = response.data.room_password
+      bookingInfo.checkOutDate = response.data.password_expiry
+      bookingInfo.tips = response.data.tips
+      
+      // 进入下一步
+      activeStep.value = 1
+    } else {
+      ElMessage.error(response.data.error || '验证失败，请重试')
+      resetCode()
+    }
+  } catch (error) {
+    console.error('验证码验证失败:', error)
+    ElMessage.error(error.response?.data?.error || '验证失败，请重试')
     resetCode()
+  } finally {
+    verifying.value = false
   }
 }
 
@@ -320,10 +350,28 @@ const showHelpDialog = () => {
 }
 
 // 确认入住
-const confirmCheckin = () => {
-  // 模拟确认入住过程，实际应该调用API
-  ElMessage.success('确认入住成功')
-  activeStep.value = 2
+const confirmCheckin = async () => {
+  if (!agreedToTerms.value) {
+    ElMessage.warning('请先同意入住须知')
+    return
+  }
+  
+  try {
+    // 添加：调用API更新状态为已入住
+    const response = await axios.post('/api/booking/confirm-check-in/', { 
+      code: bookingInfo.code 
+    })
+    
+    if (response.data.success) {
+      ElMessage.success('确认入住成功')
+      activeStep.value = 2
+    } else {
+      ElMessage.error(response.data.error || '确认入住失败，请重试')
+    }
+  } catch (error) {
+    console.error('确认入住失败:', error)
+    ElMessage.error(error.response?.data?.error || '确认入住失败，请重试')
+  }
 }
 
 // 返回首页
@@ -331,14 +379,8 @@ const goToHome = () => {
   router.push('/dashboard')
 }
 
-// 前往服务页面
-const goToService = () => {
-  router.push('/dashboard/service/ask')
-}
-
 // 退房相关
 const checkoutSuccessVisible = ref(false)
-const satisfactionRate = ref(5)
 const colors = { 3: '#E6A23C', 4: '#1989FA', 5: '#67C23A' }
 
 // 前往退房页面
@@ -347,15 +389,30 @@ const goToCheckout = () => {
 }
 
 // 确认退房
-const confirmCheckout = () => {
-  // 模拟退房过程，实际应该调用API
-  checkoutSuccessVisible.value = true
+const confirmCheckout = async () => {
+  const code = verificationDigits.value.join('')
+  
+  checkingOut.value = true
+  try {
+    const response = await axios.post('/api/booking/check-out/', { code })
+    
+    if (response.data.success) {
+      checkoutSuccessVisible.value = true
+    } else {
+      ElMessage.error(response.data.error || '退房失败，请重试')
+    }
+  } catch (error) {
+    console.error('退房失败:', error)
+    ElMessage.error(error.response?.data?.error || '退房失败，请重试')
+  } finally {
+    checkingOut.value = false
+  }
 }
 
 // 完成退房
 const finishCheckout = () => {
   checkoutSuccessVisible.value = false
-  ElMessage.success('感谢您的反馈，祝您旅途愉快！')
+  ElMessage.success('感谢您的入住，祝您旅途愉快！')
   router.push('/dashboard')
 }
 </script>
