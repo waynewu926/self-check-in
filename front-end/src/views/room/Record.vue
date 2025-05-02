@@ -150,9 +150,6 @@
     <!-- 评价对话框 -->
     <el-dialog v-model="commentDialogVisible" title="评价住宿体验" width="50%">
       <el-form :model="commentForm" label-width="100px" ref="commentFormRef">
-        <el-form-item label="总体评分">
-          <el-rate v-model="commentForm.rating" :colors="colors" show-score />
-        </el-form-item>
         <el-form-item label="评价内容">
           <el-input 
             v-model="commentForm.comment" 
@@ -160,18 +157,6 @@
             :rows="4" 
             placeholder="请分享您的住宿体验..."
           />
-        </el-form-item>
-        <el-form-item label="环境评分">
-          <el-rate v-model="commentForm.environmentRating" />
-        </el-form-item>
-        <el-form-item label="服务评分">
-          <el-rate v-model="commentForm.serviceRating" />
-        </el-form-item>
-        <el-form-item label="设施评分">
-          <el-rate v-model="commentForm.facilityRating" />
-        </el-form-item>
-        <el-form-item label="卫生评分">
-          <el-rate v-model="commentForm.cleanlinessRating" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -413,27 +398,14 @@ const handleCurrentChange = (page) => {
 const commentDialogVisible = ref(false)
 const commentFormRef = ref(null)
 const commentForm = reactive({
-  rating: 5,
-  comment: '',
-  environmentRating: 5,
-  serviceRating: 5,
-  facilityRating: 5,
-  cleanlinessRating: 5
+  comment: ''
 })
-
-// 评分颜色
-const colors = ['#99A9BF', '#F7BA2A', '#FF9900']
 
 // 显示评价对话框
 const showCommentDialog = (order) => {
   selectedOrder.value = order
   // 重置评价表单
-  commentForm.rating = 5
   commentForm.comment = ''
-  commentForm.environmentRating = 5
-  commentForm.serviceRating = 5
-  commentForm.facilityRating = 5
-  commentForm.cleanlinessRating = 5
   commentDialogVisible.value = true
 }
 
@@ -445,25 +417,9 @@ const submitComment = async () => {
   }
   
   try {
-    // 计算平均评分
-    const avgRating = (
-      commentForm.rating + 
-      commentForm.environmentRating + 
-      commentForm.serviceRating + 
-      commentForm.facilityRating + 
-      commentForm.cleanlinessRating
-    ) / 5
-    
     // 构建评价内容
     const commentData = {
-      comment: commentForm.comment,
-      rating: avgRating.toFixed(1),
-      details: {
-        environment: commentForm.environmentRating,
-        service: commentForm.serviceRating,
-        facility: commentForm.facilityRating,
-        cleanliness: commentForm.cleanlinessRating
-      }
+      comment: commentForm.comment
     }
     
     await axios.post(`/api/booking/add-comment/${selectedOrder.value.id}/`, commentData)
