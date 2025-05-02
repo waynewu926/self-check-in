@@ -302,26 +302,27 @@ def verify_check_in_code(request):
         if not code:
             return JsonResponse({'error': '验证码不能为空'}, status=400)
         
-        # 查找匹配的预订记录
+        # 查找匹配的预订记录 - 修改：不再限制只查找待入住状态的记录
         booking = Booking.objects.filter(
             code=code,
-            booking_status=1  # 待入住状态
+            booking_status__in=[1, 2]  # 1=待入住, 2=已入住
         ).first()
         
         if not booking:
             return JsonResponse({'error': '验证码无效或已过期'}, status=400)
         
-        # 只有当update_status为True时才更新状态
-        if update_status:
+        # 只有当update_status为True且状态为待入住时才更新状态
+        if update_status and booking.booking_status == 1:
             booking.booking_status = 2  # 已入住
             booking.save()
         
         # 计算密码有效期（退房日期）
         password_expiry = booking.check_out_date.strftime('%Y-%m-%d')
         
-        # 返回完整的预订信息
+        # 返回完整的预订信息，包括预订状态
         return JsonResponse({
             'success': True,
+            'booking_status': booking.booking_status,  # 添加预订状态
             'room_number': booking.room.room_number,
             'room_password': booking.room_password,
             'password_expiry': password_expiry,

@@ -318,9 +318,7 @@ const verifyCode = async () => {
     })
     
     if (response.data.success) {
-      ElMessage.success('验证码验证成功')
-      
-      // 保存验证码，用于后续确认入住
+      // 保存验证码，用于后续确认入住或退房
       bookingInfo.code = code
       
       // 更新预订信息
@@ -337,8 +335,14 @@ const verifyCode = async () => {
       bookingInfo.orderNumber = response.data.booking_number || ''
       bookingInfo.tips = response.data.tips
       
-      // 进入下一步
-      activeStep.value = 1
+      // 新增：检查预订状态，如果已经是"已入住"状态，直接跳转到退房步骤
+      if (response.data.booking_status === 2) { // 2表示已入住状态
+        ElMessage.success('验证成功，您已处于入住状态')
+        activeStep.value = 3 // 直接跳转到退房步骤
+      } else {
+        ElMessage.success('验证码验证成功')
+        activeStep.value = 1 // 进入确认入住步骤
+      }
     } else {
       ElMessage.error(response.data.error || '验证失败，请重试')
       resetCode()
