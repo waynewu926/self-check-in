@@ -287,3 +287,79 @@ def add_comment(request, booking_id):
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def verify_check_in_code(request):
+    """验证入住验证码"""
+    if request.method != 'POST':
+        return JsonResponse({'error': '只支持POST请求'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        code = data.get('code')
+        
+        if not code:
+            return JsonResponse({'error': '验证码不能为空'}, status=400)
+        
+        # 查找匹配的预订记录
+        booking = Booking.objects.filter(
+            code=code,
+            booking_status=1  # 待入住状态
+        ).first()
+        
+        if not booking:
+            return JsonResponse({'error': '验证码无效或已过期'}, status=400)
+        
+        # 更新预订状态为已入住
+        booking.booking_status = 2  # 已入住
+        booking.save()
+        
+        # 计算密码有效期（退房日期）
+        password_expiry = booking.check_out_date.strftime('%Y-%m-%d')
+        
+        # 返回须知信息
+        return JsonResponse({
+            'success': True,
+            'room_number': booking.room.room_number,
+            'room_password': booking.room_password,
+            'password_expiry': password_expiry,
+            'tips': '如需任何帮助，可点击"服务"'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def check_out(request):
+    """处理退房请求"""
+    if request.method != 'POST':
+        return JsonResponse({'error': '只支持POST请求'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        code = data.get('code')
+        
+        if not code:
+            return JsonResponse({'error': '验证码不能为空'}, status=400)
+        
+        # 查找匹配的预订记录
+        booking = Booking.objects.filter(
+            code=code,
+            booking_status=2  # 已入住状态
+        ).first()
+        
+        if not booking:
+            return JsonResponse({'error': '验证码无效或房间未处于入住状态'}, status=400)
+        
+        # 更新预订状态为已完成
+        booking.booking_status = 3  # 已完成
+        booking.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': '退房成功，感谢您的入住！'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
