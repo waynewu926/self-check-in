@@ -207,13 +207,20 @@ def booking_list(request):
                 'id': booking.id,
                 'booking_number': booking.booking_number,
                 'room_number': booking.room.room_number,
-                'room_type': booking.room.room_detail.get_room_type_display(),
+                'room_type': booking.room.room_detail.room_type,
+                'room_type_name': booking.room.room_detail.get_room_type_display(),
                 'check_in_date': booking.check_in_date.strftime('%Y-%m-%d'),
                 'check_out_date': booking.check_out_date.strftime('%Y-%m-%d'),
                 'total_price': booking.total_price,
-                'booking_status': booking.get_booking_status_display(),
-                'can_comment': booking.booking_status == 3,  # 已完成状态才能评价
-                'comment': booking.comment,  # 添加评价内容
+                'booking_status': booking.booking_status,
+                'booking_status_name': booking.get_booking_status_display(),
+                'guest_name': booking.guest_name,
+                'guest_phone': booking.guest_phone,
+                'guest_id_card': booking.guest_id_card,
+                'guest_count': booking.guest_count,
+                'code': booking.code,
+                'comment': booking.comment,
+                'comment_time': booking.comment_time.strftime('%Y-%m-%d %H:%M:%S') if booking.comment_time else None,
             }
             booking_list.append(booking_data)
         

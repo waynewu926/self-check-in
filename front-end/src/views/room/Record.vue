@@ -123,10 +123,10 @@
           <el-descriptions-item label="入住天数">
             {{ calculateDays(selectedOrder.check_in_date, selectedOrder.check_out_date) }}天
           </el-descriptions-item>
-          <el-descriptions-item label="入住人数">{{ selectedOrder.guest_count }}人</el-descriptions-item>
-          <el-descriptions-item label="入住人">{{ selectedOrder.guest_name }}</el-descriptions-item>
-          <el-descriptions-item label="联系电话">{{ maskPhone(selectedOrder.guest_phone) }}</el-descriptions-item>
-          <el-descriptions-item label="身份证号">{{ maskIdCard(selectedOrder.guest_id_card) }}</el-descriptions-item>
+          <el-descriptions-item label="入住人数">{{ selectedOrder.guest_count || 0 }}人</el-descriptions-item>
+          <el-descriptions-item label="入住人">{{ selectedOrder.guest_name || '未提供' }}</el-descriptions-item>
+          <el-descriptions-item label="联系电话">{{ maskPhone(selectedOrder.guest_phone || '') }}</el-descriptions-item>
+          <el-descriptions-item label="身份证号">{{ maskIdCard(selectedOrder.guest_id_card || '') }}</el-descriptions-item>
           <el-descriptions-item label="验证码" v-if="selectedOrder.code">{{ selectedOrder.code }}</el-descriptions-item>
           <el-descriptions-item label="评价" :span="2" v-if="selectedOrder.comment">
             {{ selectedOrder.comment }}
@@ -250,13 +250,13 @@ const calculateDays = (checkInDate, checkOutDate) => {
 
 // 手机号码脱敏
 const maskPhone = (phone) => {
-  if (!phone || phone.length < 11) return phone
+  if (!phone || phone === '未提供' || phone.length < 11) return phone || '未提供'
   return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
 }
 
 // 身份证号脱敏
 const maskIdCard = (idCard) => {
-  if (!idCard || idCard.length < 15) return idCard
+  if (!idCard || idCard === '未提供' || idCard.length < 15) return idCard || '未提供'
   return idCard.replace(/^(.{6})(?:\d+)(.{4})$/, '$1********$2')
 }
 
@@ -281,20 +281,49 @@ const fetchBookings = async () => {
     // 移除 withCredentials 配置，因为已在 main.js 中全局设置
     const response = await axios.get('/api/booking/list/', { params })
     
+    // 添加调试信息，查看实际响应
+    console.log('预订记录响应数据:', response.data)
+    
     // 处理响应数据
     if (response.data && response.data.bookings) {
       bookings.value = response.data.bookings.map(booking => {
-        // 添加状态名称
+        // 状态映射
         const statusMap = {
           '0': '已取消',
           '1': '待入住',
           '2': '已入住',
-          '3': '已完成'
+          '3': '已完成',
+          '已取消': '已取消',
+          '待入住': '待入住',
+          '已入住': '已入住',
+          '已完成': '已完成'
         }
+        
+        // 确定状态值（数字形式）
+        let statusValue = booking.booking_status
+        if (typeof booking.booking_status === 'string' && !isNaN(parseInt(booking.booking_status))) {
+          statusValue = parseInt(booking.booking_status)
+        } else if (typeof booking.booking_status === 'string') {
+          // 如果是文本描述，转换为对应的数字
+          const statusTextToValue = {
+            '已取消': '0',
+            '待入住': '1',
+            '已入住': '2',
+            '已完成': '3'
+          }
+          statusValue = statusTextToValue[booking.booking_status] || booking.booking_status
+        }
+        
         return {
           ...booking,
+          booking_status: statusValue,
           booking_status_name: statusMap[booking.booking_status] || booking.booking_status,
-          room_type_name: getRoomTypeName(booking.room_type)
+          room_type_name: getRoomTypeName(booking.room_type),
+          // 确保这些字段有默认值
+          guest_name: booking.guest_name || '未提供',
+          guest_phone: booking.guest_phone || '未提供',
+          guest_id_card: booking.guest_id_card || '未提供',
+          guest_count: booking.guest_count || 0
         }
       })
       totalRecords.value = response.data.total || 0
