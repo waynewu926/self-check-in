@@ -19,7 +19,7 @@
       </template>
       
       <div class="verification-content">
-        <p class="verification-tip">请在线下自助机上输入您收到的4位数字验证码</p>
+        <p class="verification-tip">请输入您收到的4位数字验证码</p>
         
         <div class="verification-code-input">
           <el-input
