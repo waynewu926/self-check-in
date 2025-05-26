@@ -25,8 +25,8 @@
           <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" maxlength="6" show-password></el-input>
         </el-form-item>
         
-        <el-form-item>
-          <el-button type="primary" @click="handleRegister" :loading="loading" style="width: 100%;">注册</el-button>
+        <el-form-item class="button-container">
+          <el-button type="primary" @click="handleRegister" :loading="loading">注册</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -125,16 +125,69 @@ const handleRegister = async () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f5f7fa;
+  /* 更浅更自然的渐变色背景 */
+  background: linear-gradient(135deg, #d4f0e9 0%, #c4e0f3 100%);
+  background-size: cover;
 }
 
 .register-card {
   width: 450px;
+  padding: 30px;
+  border-radius: 25px;
+  /* 更自然的磨砂玻璃效果 */
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* 调整表单内部元素样式 */
+:deep(.el-form-item__label) {
+  color: #333;
+  font-weight: 500;
+}
+
+:deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+}
+
+/* 按钮容器样式 */
+.button-container {
+  display: flex;
+  justify-content: center;
+}
+
+/* 修改主要按钮样式，使其更加明显 */
+:deep(.el-button--primary) {
+  background: linear-gradient(to right, #4a9ad1, #3d8b80);
+  border: none;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  width: 180px; /* 设置固定宽度 */
+}
+
+:deep(.el-button--primary:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* 修改文本按钮样式 */
+:deep(.el-button--text) {
+  color: #4a9ad1;
+  font-weight: 500;
+}
+
+:deep(.el-button--text:hover) {
+  color: #3d8b80;
 }
 </style>

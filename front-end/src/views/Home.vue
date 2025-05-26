@@ -24,7 +24,7 @@
         <el-card shadow="hover">
           <el-icon class="feature-icon"><service /></el-icon>
           <div class="feature-title">服务中心</div>
-          <div class="feature-desc">服务请求、反馈评价</div>
+          <div class="feature-desc">房间清洁、设施维修</div>
         </el-card>
       </router-link>
     </div>

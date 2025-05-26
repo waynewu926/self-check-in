@@ -52,6 +52,18 @@ const routes = [
         name: 'Checkin',
         component: () => import('../views/checkin/Index.vue')
       },
+      // 服务中心模块
+      {
+        path: 'service',
+        name: 'Service',
+        children: [
+          {
+            path: 'ask',
+            name: 'ServiceAsk',
+            component: () => import('../views/service/Ask.vue')
+          }
+        ]
+      }
     ]
   }
 ];

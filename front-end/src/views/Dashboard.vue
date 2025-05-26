@@ -29,6 +29,12 @@
             <el-menu-item index="/dashboard/room/record">预订记录</el-menu-item>
           </el-sub-menu>
           <el-menu-item index="/dashboard/checkin">自助入住</el-menu-item>
+          <el-sub-menu index="/dashboard/service">
+            <template #title>
+              <span>服务中心</span>
+            </template>
+            <el-menu-item index="/dashboard/service/ask">请求服务</el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
 
